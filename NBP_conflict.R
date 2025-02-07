@@ -197,6 +197,10 @@ df_pwt <- read_excel("pwt1001.xlsx", sheet = 3) %>%
   rename(iso3c = countrycode,
          Year = year)
 
+# conflict dyads
+df_ethnicdyads <- openxlsx::read.xlsx("dyads_intensity_groups.xlsx") %>%
+  filter(!is.na(group))
+
 ###---- DOWNGRADE AND CONFLICT -------------------------------------------------
 
 ##---- Inspect the data  -------------------------------------------------------
@@ -1850,14 +1854,81 @@ summary(as.factor(df_complete$tek_egip))
 df_complete <- df_complete %>%
   left_join(df_pwt, by = c("iso3c", "Year"))
 
+##---- Conflict intensity
+
+df_cc2 <- countrycode::codelist %>%
+  select(c(iso3c, gwn)) %>%
+  rename(gwid = gwn)
+
+df_conflicts <- df_ethnicdyads %>%
+  left_join(df_cc2, by = "gwid") %>%
+  rename(groupname = group,
+         Year = year)
+
+summary(df_conflicts)
+summary(as.factor(df_conflicts$iso3c))
+
+df_cNA <- df_conflicts %>%
+  filter(is.na(iso3c))
+
+df_conflicts <- df_conflicts %>%
+  mutate(iso3c = case_when(
+    gwid == "678" ~ "YEM",
+    gwid == "345" ~ "YUG",
+    TRUE ~ iso3c
+  ))
+
+summary(as.factor(df_conflicts$iso3c))
+
+class(df_conflicts$Year)
+
+df_conflicts <- df_conflicts %>%
+  mutate(Year = as.numeric(as.character(Year)))
+
 ###---- ANALYSIS ---------------------------------------------------------------
 summary(as.factor(df_complete$onset_ko_flag))
 summary(as.factor(df_complete$incidence_flag))
 
 df_analysis <- df_complete %>%
-  select(iso3c, Year, Group, EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp)
+  select(iso3c, Year, Group, groupname, EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict)
+
+df_analysis <- df_analysis %>%
+  mutate(as.numeric(as.character(Year)))
 
 summary(df_analysis)
+
+# lagged variables
+lag_vars <- c("nbp_anydown_1",
+              "nbp_educational_exclusion",
+              "nbp_public_exclusion",
+              "nbp_any_loi",
+              "nbp_any_lc",
+              "HI",
+              "SDM",
+              "Polity2",
+              "rgdpe",
+              "rgdpo",
+              "rgdpna",
+              "groupsize",
+              "SpatialConc",
+              "status_excl",
+              "epr_downgraded1", 
+              "Monolingual",
+              "MonolingualStrict")
+
+df_analysis <- df_analysis %>%
+  arrange(Year) %>%
+  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
+
+# conflict intensity
+df_analysis_conflicts <- df_conflicts %>%
+  left_join(df_analysis, by = c("iso3c", "Year", "groupname")) %>%
+  distinct()
+
+df_analysis_conflicts <- df_analysis_conflicts %>%
+  mutate(intensity_level = as.factor(intensity_level))
+
+summary(df_analysis_conflicts)
 
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?
@@ -2452,7 +2523,6 @@ m19_vcov_cluster_alt2 <- vcovCL(m19_logit_alt2, cluster = df_analysis_sdm2$iso3c
 m19_summary_clustered_alt2 <- coeftest(m19_logit_alt2, vcov = m19_vcov_cluster_alt2)
 
 print(m19_summary_clustered_alt2)
-
 
 
 # Status excluded as IV
@@ -3113,231 +3183,333 @@ m8_2w_fixed <- feglm(incidence_flag ~ HI +
 summary(m8_2w_fixed)
 summary(m8_2w_fixed, cluster = "Group")
 
+## DOWNGRADE ANALYSES WITH LAGGED VARS
+
+m1_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+                  lag_groupsize +
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m1_logit_lag)
+
+m1_lag_vcov_cluster <- vcovCL(m1_logit_lag, cluster = df_analysis$iso3c)
+
+m1_lag_summary_clustered <- coeftest(m1_logit_lag, vcov = m1_lag_vcov_cluster)
+
+print(m1_lag_summary_clustered)
+
+
+
+m2_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
+                  epr_downgraded1 + 
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  lag_groupsize +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m2_logit_lag)
+
+m2_lag_vcov_cluster <- vcovCL(m2_logit_lag, cluster = df_analysis$iso3c)
+
+m2_lag_summary_clustered <- coeftest(m2_logit_lag, vcov = m2_lag_vcov_cluster)
+
+print(m2_lag_summary_clustered)
+
+# incidence
+
+m3_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 + 
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  lag_groupsize +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m3_logit_lag)
+
+m3_lag_vcov_cluster <- vcovCL(m3_logit_lag, cluster = df_analysis$iso3c)
+
+m3_lag_summary_clustered <- coeftest(m3_logit_lag, vcov = m3_lag_vcov_cluster)
+
+print(m3_lag_summary_clustered)
+
+
+
+m4_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
+                  epr_downgraded1 + 
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  lag_groupsize +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m4_logit_lag)
+
+m4_lag_vcov_cluster <- vcovCL(m4_logit_lag, cluster = df_analysis$iso3c)
+
+m4_lag_summary_clustered <- coeftest(m4_logit_lag, vcov = m4_lag_vcov_cluster)
+
+print(m4_lag_summary_clustered)
+
+# territorial onset
+
+m5_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 + 
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  lag_groupsize +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m5_logit_lag)
+
+m5_lag_vcov_cluster <- vcovCL(m5_logit_lag, cluster = df_analysis$iso3c)
+
+m5_lag_summary_clustered <- coeftest(m5_logit_lag, vcov = m5_lag_vcov_cluster)
+
+print(m5_lag_summary_clustered)
+
+
+m6_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
+                  epr_downgraded1 + 
+                  lag_SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  lag_groupsize + 
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis,
+                family = binomial())
+
+summary(m6_logit_lag)
+
+m6_lag_vcov_cluster <- vcovCL(m6_logit_lag, cluster = df_analysis$iso3c)
+
+m6_lag_summary_clustered <- coeftest(m6_logit_lag, vcov = m6_lag_vcov_cluster)
+
+print(m6_lag_summary_clustered)
+
+# territorial incidence
+
+m7_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
+                   lag_SpatialConc +
+                   warhist +
+                   peaceyears +
+                   tek_egip +
+                   lag_Polity2 +
+                   nbp_groups_count +
+                   #groupsize +
+                   log(pop) +
+                   log(rgdpe),
+                 data = df_analysis,
+                 family = binomial())
+
+summary(m7_logit_lag)
+
+m7_lag_vcov_cluster <- vcovCL(m7_logit_lag, cluster = df_analysis$iso3c)
+
+m7_lag_summary_clustered <- coeftest(m7_logit_lag, vcov = m7_lag_vcov_cluster)
+
+print(m7_lag_summary_clustered)
+
+
+
+m8_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
+                   epr_downgraded1 + 
+                   lag_SpatialConc +
+                   warhist +
+                   peaceyears +
+                   tek_egip +
+                   lag_Polity2 +
+                   nbp_groups_count +
+                   lag_groupsize +
+                   log(pop) +
+                   log(rgdpe),
+                 data = df_analysis,
+                 family = binomial())
+
+summary(m8_logit_lag)
+
+m8_lag_vcov_cluster <- vcovCL(m8_logit_lag, cluster = df_analysis$iso3c)
+
+m8_lag_summary_clustered <- coeftest(m8_logit_lag, vcov = m8_lag_vcov_cluster)
+
+print(m8_lag_summary_clustered)
+
+
+# CONFLICT INTENSITY
+
+m1_intensity <- glm(intensity_level ~ nbp_anydown_1 + 
+                  groupsize +
+                  SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  Polity2 +
+                  nbp_groups_count +
+                  log(pop) +
+                  log(rgdpe),
+                data = df_analysis_conflicts,
+                family = binomial())
+
+summary(m1_intensity)
+
+m1_intensity_vcov_cluster <- vcovCL(m1_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m1_intensity_summary_clustered <- coeftest(m1_intensity, vcov = m1_intensity_vcov_cluster)
+
+print(m1_intensity_summary_clustered)
+
+
+
+m2_intensity <- glm(intensity_level ~ HI + 
+                      groupsize +
+                      SpatialConc +
+                      warhist +
+                      peaceyears +
+                      tek_egip +
+                      Polity2 +
+                      nbp_groups_count +
+                      log(pop) +
+                      log(rgdpe),
+                    data = df_analysis_conflicts,
+                    family = binomial())
+
+summary(m2_intensity)
+
+m2_intensity_vcov_cluster <- vcovCL(m2_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m2_intensity_summary_clustered <- coeftest(m2_intensity, vcov = m2_intensity_vcov_cluster)
+
+print(m2_intensity_summary_clustered)
+
+
+
+m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 + 
+                      lag_groupsize +
+                      lag_SpatialConc +
+                      warhist +
+                      peaceyears +
+                      tek_egip +
+                      lag_Polity2 +
+                      nbp_groups_count +
+                      log(pop) +
+                      log(rgdpe),
+                    data = df_analysis_conflicts,
+                    family = binomial())
+
+summary(m3_intensity)
+
+m3_intensity_vcov_cluster <- vcovCL(m3_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m3_intensity_summary_clustered <- coeftest(m3_intensity, vcov = m3_intensity_vcov_cluster)
+
+print(m3_intensity_summary_clustered)
+
+
+
+m4_intensity <- glm(intensity_level ~ lag_HI + 
+                      lag_groupsize +
+                      lag_SpatialConc +
+                      warhist +
+                      peaceyears +
+                      tek_egip +
+                      lag_Polity2 +
+                      nbp_groups_count +
+                      log(pop) +
+                      log(rgdpe),
+                    data = df_analysis_conflicts,
+                    family = binomial())
+
+summary(m4_intensity)
+
+m4_intensity_vcov_cluster <- vcovCL(m4_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m4_intensity_summary_clustered <- coeftest(m4_intensity, vcov = m4_intensity_vcov_cluster)
+
+print(m4_intensity_summary_clustered)
 
 
 
 
+m5_intensity <- glm(intensity_level ~ Monolingual + 
+                      groupsize +
+                      SpatialConc +
+                      warhist +
+                      peaceyears +
+                      tek_egip +
+                      Polity2 +
+                      nbp_groups_count +
+                      log(pop) +
+                      log(rgdpe),
+                    data = df_analysis_conflicts,
+                    family = binomial())
+
+summary(m5_intensity)
+
+m5_intensity_vcov_cluster <- vcovCL(m5_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m5_intensity_summary_clustered <- coeftest(m5_intensity, vcov = m5_intensity_vcov_cluster)
+
+print(m5_intensity_summary_clustered)
+
+
+
+m6_intensity <- glm(intensity_level ~ lag_Monolingual + 
+                      lag_groupsize +
+                      lag_SpatialConc +
+                      warhist +
+                      peaceyears +
+                      tek_egip +
+                      lag_Polity2 +
+                      nbp_groups_count +
+                      log(pop) +
+                      log(rgdpe),
+                    data = df_analysis_conflicts,
+                    family = binomial())
+
+summary(m6_intensity)
+
+m6_intensity_vcov_cluster <- vcovCL(m6_intensity, cluster = df_analysis_conflicts$iso3c)
+
+m6_intensity_summary_clustered <- coeftest(m6_intensity, vcov = m6_intensity_vcov_cluster)
+
+print(m6_intensity_summary_clustered)
 
 
 
 
-
-
-
-
-# # panel analysis
-# df_analysis <- df_analysis %>%
-#   mutate(Group = paste0(Group, EPRMergeLevel)) ## we have to consider how we treat the subgroups here - this is a preliminary but not ideal solution 
-# 
-# df_analysis <- df_analysis%>%
-#   mutate(panel_id = paste(Group, Country, sep = "_"))
-# 
-# pdf_analysis <- pdata.frame(df_analysis, index = c("panel_id", "Year"))
-
-
-
-
-
-###---- OLD CODE FRAGMENTS ------------------------------------------------------
-
-## MONOLINGUAL VAR - EXTENDED ATT. 1
-
-# # here: to be adjusted based on definition of monolingual education (incl. regional LOIs?)
-# df_languages <- df_languages %>%
-#   mutate(
-#     Lang1_LOI = if_else(LOIPrimary1 %in% c(1, 2) | LOISecondary1 %in% c(1, 2), 1, 0),
-#     Lang2_LOI = if_else(LOIPrimary2 %in% c(1, 2) | LOISecondary2 %in% c(1, 2), 1, 0),
-#     Lang3_LOI = if_else(LOIPrimary3 %in% c(1, 2) | LOISecondary3 %in% c(1, 2), 1, 0),
-#     Other_LOI = if_else(LOIPrimaryOtherLang %in% c(1, 2) | LOISecondaryOtherLang %in% c(1, 2), 1, 0),
-#     AddiLang_LOI = if_else(LOIPrimaryAddiLang %in% c(1, 2) | LOISecondaryAddiLang %in% c(1, 2), 1, 0),
-#     StandardArabicLang_LOI = if_else(LOIPrimaryStArabic %in% c(1, 2) | LOISecondaryStArabic %in% c(1, 2), 1, 0),
-#     AddiLangCountry1_LOI = if_else(AddiLOI1 %in% c(1, 2) | AddiLOI1 %in% c(1, 2), 1, 0),
-#     AddiLangCountry2_LOI = if_else(AddiLOI2 %in% c(1, 2) | AddiLOI2 %in% c(1, 2), 1, 0),
-#     AddiLangCountry3_LOI = if_else(AddiLOI3 %in% c(1, 2) | AddiLOI3 %in% c(1, 2), 1, 0),
-#     AddiLangCountry4_LOI = if_else(AddiLOI4 %in% c(1, 2) | AddiLOI4 %in% c(1, 2), 1, 0)
-#   )
-# 
-# # in long format; make sure that status is mapped correctly on language 
-# df_long <- df_languages %>%
-#   select(
-#     Year, Country, iso3c,  
-#     OtherSpokenLang,
-#     Lang1, Lang2, Lang3, StandardArabicLang,
-#     starts_with("AddiLang"),
-#     ends_with("_LOI")
-#   ) %>%
-#   pivot_longer(
-#     cols = c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang, 
-#              AddiLang, AddiLangCountry1, 
-#              AddiLangCountry2, AddiLangCountry3, AddiLangCountry4),
-#     names_to = "Language_Variable",
-#     values_to = "Language_Name"
-#   ) %>%
-#   pivot_longer(
-#     cols = ends_with("_LOI"),
-#     names_to = "LOI_Variable",
-#     values_to = "LOI_Status"
-#   ) %>%
-#   mutate(
-#     Language_Match = case_when(
-#       LOI_Variable == "Lang1_LOI" ~ "Lang1",
-#       LOI_Variable == "Lang2_LOI" ~ "Lang2",
-#       LOI_Variable == "Lang3_LOI" ~ "Lang3",
-#       LOI_Variable == "StandardArabicLang_LOI" ~ "StandardArabicLang",
-#       LOI_Variable == "Other_LOI" ~ "OtherSpokenLang",
-#       LOI_Variable == "AddiLang_LOI" ~ "AddiLang",
-#       LOI_Variable == "AddiLangCountry1_LOI" ~ "AddiLangCountry1",
-#       LOI_Variable == "AddiLangCountry2_LOI" ~ "AddiLangCountry2",
-#       LOI_Variable == "AddiLangCountry3_LOI" ~ "AddiLangCountry3",
-#       LOI_Variable == "AddiLangCountry4_LOI" ~ "AddiLangCountry4",
-#       TRUE ~ NA_character_
-#     )
-#   ) %>%
-#   filter(Language_Variable == Language_Match) %>%
-#   select(Year, Country, iso3c, Language_Name, LOI_Status) %>%
-#   arrange(Year, Country, Language_Name) %>%
-#   filter(Language_Name != "" & !is.na(Language_Name))
-# 
-# # keep only unique languages for every county-year
-# df_long_unique <- df_long %>%
-#   distinct(Year, Country, iso3c, Language_Name, .keep_all = TRUE)
-# 
-# # list of unique languages (to check)
-# unique_languages <- df_long_unique %>%
-#   select(Language_Name) %>%
-#   distinct() %>%
-#   arrange(Language_Name)
-# 
-# language_vector <- unique_languages$Language_Name
-# 
-# print(language_vector)
-# 
-# 
-# # to cross-check again for double counting
-# df_positive_LOI <- df_long_unique %>%
-#   filter(LOI_Status == 1)
-# 
-# # count no. of LOIs in every given country-year;  cf. also here re. double-counting of upgrades/ downgrades: we can easily create another dummy that records at the country level whether the no. of LOIs increased or decreased compared to the previous year. 
-# df_loi_count <- df_long_unique %>%
-#   filter(LOI_Status == 1) %>%
-#   group_by(Year, Country, iso3c) %>%
-#   summarise(Number_of_LOI_Languages = n_distinct(Language_Name), .groups = "drop")
-# 
-# # construct monolingual dummy - where no. of LOI == 1
-# df_monolingual <- df_loi_count %>%
-#   mutate(
-#     monolingual_ed = as.factor(if_else(Number_of_LOI_Languages == 1, 1, 0))
-#   )
-# 
-# summary(df_monolingual$monolingual_ed)
-# writexl::write_xlsx(df_monolingual, "nbp_LOIcounts_MonolingualDummy.xlsx")
-# 
-# # monolingual dummy in full dataset (and first check in class compatible)
-# class(df_complete$Year)
-# class(df_complete$Country)
-# class(df_complete$iso3c)
-# 
-# # adjust
-# df_monolingual <- df_monolingual %>%
-#   mutate(Year = as.numeric(as.character(Year)),
-#          Country = as.character(Country),
-#          iso3c = as.character(iso3c))
-# 
-# # join by country and year 
-# df_complete <- df_complete %>%
-#   left_join(df_monolingual, by = c("Year", "Country", "iso3c"))
-# 
-# summary(df_complete$monolingual_ed)
-
-
-## OLD HI CODE
-
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LOIPsum = sum(c(LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryOtherLang, LOIPrimaryStArabic), na.rm = TRUE) / 
-#       length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       )
-#   )
-# 
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LOISsum = sum(c(LOISecondary1, LOISecondary2, LOISecondary3, LOISecondaryOtherLang, LOISecondaryStArabic), na.rm = TRUE) / 
-#       length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       )
-#   )
-# 
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LOIsum = sum(c(LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryOtherLang, LOIPrimaryStArabic, LOISecondary1, LOISecondary2, LOISecondary3, LOISecondaryOtherLang, LOISecondaryStArabic), na.rm = TRUE) / 
-#       (length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       ) * 2) # Multiply the denominator by 2
-#   )
-# 
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LCPsum = sum(c(LCPrimary1, LCPrimary2, LCPrimary3, LCPrimaryOtherLang, LCPrimaryStArabic), na.rm = TRUE) / 
-#       length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       )
-#   )
-# 
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LCSsum = sum(c(LCSecondary1, LCSecondary2, LCSecondary3, LCSecondaryOtherLang, LCSecondaryStArabic), na.rm = TRUE) / 
-#       length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       )
-#   )
-# 
-# df_HI <- df_HI %>% 
-#   rowwise() %>% 
-#   mutate(
-#     LCsum = sum(c(LCPrimary1, LCPrimary2, LCPrimary3, LCPrimaryOtherLang, LCPrimaryStArabic, LCSecondary1, LCSecondary2, LCSecondary3, LCSecondaryOtherLang, LCSecondaryStArabic), na.rm = TRUE) / 
-#       (length(
-#         na.omit(
-#           c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)[
-#             !is.na(c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang)) &
-#               c(Lang1, Lang2, Lang3, OtherSpokenLang, StandardArabicLang) != ""
-#           ]
-#         )
-#       )) # this was *2 as well. Intentionally? or is this included above to weight LOI against LC? I think it makes sense to give more weight to LOI than to LC
-#   )
-
-
-
-
-df_SL <- df_complete %>%
-  filter(Country.x == "Sri Lanka")

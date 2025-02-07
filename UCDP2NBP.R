@@ -12,8 +12,8 @@ library(tidyverse)
 library(haven)
 
 ##---- Data --------------------------------------------------------------------
-df_nbp <- read_dta("NBP_groups_final.dta")
-df_epr2nbp <- read_dta("EPR2NBP_Emre2.dta")
+#df_nbp <- read_dta("NBP_groups_final.dta")
+#df_epr2nbp <- read_dta("EPR2NBP_Emre2.dta")
 df_dyads <- openxlsx::read.xlsx("Dyadic_v24_1.xlsx")
 df_acd2epr <- openxlsx::read.xlsx("ACD2EPR-2021.xlsx")
 
@@ -41,3 +41,4 @@ df_ethnicdyads <- df_dyads %>%
 
 summary(df_ethnicdyads)
 
+openxlsx::write.xlsx(df_ethnicdyads, "dyads_intensity_groups.xlsx")
