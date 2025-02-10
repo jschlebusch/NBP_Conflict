@@ -163,6 +163,15 @@ df_merge_subgroup3$EPRMergeLevel <- ifelse(!is.na(df_merge_subgroup3$EPRIDsubgro
 summary(as.factor(df_merge_subgroup3$EPRMergeLevel))
 
 # put it all together, always taking the merged groups from each step, and adding the groups that were not merged after merging on subgroup 3 in the end
+df_merge_subgroup1 <- df_merge_subgroup1 %>%
+  mutate(EPRMergeLevel = as.character(EPRMergeLevel))
+
+df_merge_subgroup2 <- df_merge_subgroup2 %>%
+  mutate(EPRMergeLevel = as.character(EPRMergeLevel))
+
+df_merge_subgroup3 <- df_merge_subgroup3 %>%
+  mutate(EPRMergeLevel = as.character(EPRMergeLevel))
+
 df_EPR2NBP <- bind_rows(
   subset(df_groupmerge, !is.na(EPRMergeLevel)),        
   subset(df_merge_subgroup1, !is.na(EPRMergeLevel)),   
@@ -182,6 +191,7 @@ summary(df_EPR2NBP)
 
 summary(df_EPR2NBP$EPRMergeLevel)
 
+write.csv(df_EPR2NBP, "EPR2NBP-csv.csv")
 write_dta(df_EPR2NBP, "EPR2NBP.dta")
 
 #check against Andrei's results
