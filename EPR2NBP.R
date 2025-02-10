@@ -172,6 +172,8 @@ df_merge_subgroup2 <- df_merge_subgroup2 %>%
 df_merge_subgroup3 <- df_merge_subgroup3 %>%
   mutate(EPRMergeLevel = as.character(EPRMergeLevel))
 
+print(df_merge_subgroup1$EPRIDsubgroup1)
+
 df_EPR2NBP <- bind_rows(
   subset(df_groupmerge, !is.na(EPRMergeLevel)),        
   subset(df_merge_subgroup1, !is.na(EPRMergeLevel)),   
@@ -192,7 +194,8 @@ summary(df_EPR2NBP)
 summary(df_EPR2NBP$EPRMergeLevel)
 
 write.csv(df_EPR2NBP, "EPR2NBP-csv.csv")
-write_dta(df_EPR2NBP, "EPR2NBP.dta")
+#write_dta(df_EPR2NBP, "EPR2NBP.dta")
+write_dta(df_EPR2NBP, "EPR2NBP-dta_new.dta")
 
 #check against Andrei's results
 
