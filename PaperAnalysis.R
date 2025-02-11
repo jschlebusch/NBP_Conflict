@@ -24,6 +24,8 @@ library(lmtest)
 library(plm)
 library(fixest)
 library(stargazer)
+library(splines)
+
 
 # Load data
 
@@ -51,7 +53,8 @@ m1_logit <- glm(onset_ko_flag ~ nbp_anydown_1 +
                   lag_Polity2 +
                   nbp_groups_count +
                   log(pop) +
-                  log(lag_rgdpe),
+                  log(lag_rgdpe) +
+                ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -62,7 +65,6 @@ m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis$iso3c)
 m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
-
 
 m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 + 
                   SpatialConc +
