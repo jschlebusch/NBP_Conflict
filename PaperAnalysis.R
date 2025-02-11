@@ -24,6 +24,8 @@ library(lmtest)
 library(plm)
 library(fixest)
 library(stargazer)
+library(splines)
+
 
 # Load data
 
@@ -33,11 +35,12 @@ df_analysis_conflicts <- read.csv("NBP_conflict_paper_analysis_c.csv") # this is
 
 ###---- ANALYSIS ---------------------------------------------------------------
 
-# DOWNGRADE
+# COMPARING POLITICAL AND EDUCATIONAL DOWNGRADES
 
-# onset
+# ONSET
 
-m1_logit <- glm(onset_ko_flag ~ nbp_anydown_1 + 
+
+m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -46,7 +49,8 @@ m1_logit <- glm(onset_ko_flag ~ nbp_anydown_1 +
                   lag_Polity2 +
                   nbp_groups_count +
                   log(pop) +
-                  log(lag_rgdpe),
+                  log(lag_rgdpe) +
+                ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -58,7 +62,6 @@ m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
 
-
 m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 + 
                   SpatialConc +
                   warhist +
@@ -68,7 +71,8 @@ m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(lag_rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -91,7 +95,8 @@ m3_logit <- glm(onset_ko_flag ~ nbp_anydown_1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -105,7 +110,7 @@ print(m3_summary_clustered)
 
 # incidence
 
-m4_logit <- glm(incidence_flag ~ nbp_anydown_1 + 
+m4_logit <- glm(incidence_flag ~ lag_nbp_anydown_1 + 
                   SpatialConc +
                   warhist +
                   peaceyears +
@@ -114,7 +119,8 @@ m4_logit <- glm(incidence_flag ~ nbp_anydown_1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -136,7 +142,8 @@ m5_logit <- glm(incidence_flag ~ epr_downgraded1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -159,7 +166,8 @@ m6_logit <- glm(incidence_flag ~ nbp_anydown_1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -182,7 +190,8 @@ m7_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -204,7 +213,8 @@ m8_logit <- glm(onset_ko_terr_flag ~ epr_downgraded1 +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -227,7 +237,8 @@ m9_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   nbp_groups_count +
                   groupsize + 
                   log(pop) +
-                  log(rgdpe),
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
@@ -248,9 +259,10 @@ m10_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    tek_egip +
                    Polity2 +
                    nbp_groups_count +
-                   #groupsize +
+                   groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe) +
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -272,7 +284,8 @@ m11_logit <- glm(incidence_terr_flag ~ epr_downgraded1 +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -295,7 +308,8 @@ m12_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -332,7 +346,8 @@ m13_logit <- glm(onset_ko_flag ~ HI +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -354,7 +369,8 @@ m14_logit <- glm(onset_ko_terr_flag ~ HI +
                    nbp_groups_count +
                    groupsize + 
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -376,7 +392,7 @@ m15_logit <- glm(incidence_flag ~ HI +
                    nbp_groups_count +
                    groupsize + 
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -398,7 +414,8 @@ m16_logit <- glm(incidence_terr_flag ~ HI +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -421,7 +438,7 @@ m17_logit <- glm(SDM ~ nbp_anydown_1 +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -443,7 +460,7 @@ m18_logit <- glm(SDM ~ epr_downgraded1 +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -466,7 +483,8 @@ m19_logit <- glm(SDM ~ nbp_anydown_1 +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -494,7 +512,8 @@ m17_logit_alt <- glm(SDM ~ nbp_anydown_1 +
                        nbp_groups_count +
                        groupsize + 
                        log(pop) +
-                       log(rgdpe),
+                       log(lag_rgdpe)+
+                       ns(peaceyears, df = 3),
                      data = df_analysis_sdm,
                      family = binomial())
 
@@ -516,7 +535,8 @@ m18_logit_alt <- glm(SDM ~ epr_downgraded1 +
                        nbp_groups_count +
                        groupsize + 
                        log(pop) +
-                       log(rgdpe),
+                       log(lag_rgdpe)+
+                       ns(peaceyears, df = 3),
                      data = df_analysis_sdm,
                      family = binomial())
 
@@ -539,7 +559,8 @@ m19_logit_alt <- glm(SDM ~ nbp_anydown_1 +
                        nbp_groups_count +
                        groupsize +
                        log(pop) +
-                       log(rgdpe),
+                       log(lag_rgdpe)+
+                       ns(peaceyears, df = 3),
                      data = df_analysis_sdm,
                      family = binomial())
 
@@ -564,7 +585,8 @@ m17_logit_alt2 <- glm(SDM ~ nbp_anydown_1 +
                         nbp_groups_count +
                         groupsize +
                         log(pop) +
-                        log(rgdpe),
+                        log(lag_rgdpe)+
+                        ns(peaceyears, df = 3),
                       data = df_analysis_sdm2,
                       family = binomial())
 
@@ -586,7 +608,8 @@ m18_logit_alt2 <- glm(SDM ~ epr_downgraded1 +
                         nbp_groups_count +
                         groupsize +
                         log(pop) +
-                        log(rgdpe),
+                        log(lag_rgdpe)+
+                        ns(peaceyears, df = 3),
                       data = df_analysis_sdm2,
                       family = binomial())
 
@@ -609,7 +632,8 @@ m19_logit_alt2 <- glm(SDM ~ nbp_anydown_1 +
                         nbp_groups_count +
                         groupsize +
                         log(pop) +
-                        log(rgdpe),
+                        log(lag_rgdpe)+
+                        ns(peaceyears, df = 3),
                       data = df_analysis_sdm2,
                       family = binomial())
 
@@ -633,7 +657,8 @@ m20_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -656,7 +681,8 @@ m21_logit <- glm(onset_ko_flag ~ nbp_public_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -679,7 +705,8 @@ m22_logit <- glm(onset_ko_flag ~ status_excl +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -702,7 +729,8 @@ m23_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -726,7 +754,8 @@ m24_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -748,7 +777,8 @@ m25_logit <- glm(incidence_flag ~ nbp_public_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -770,7 +800,8 @@ m26_logit <- glm(incidence_flag ~ status_excl +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -793,7 +824,7 @@ m27_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -817,7 +848,7 @@ m28_logit <- glm(incidence_terr_flag ~ nbp_educational_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -839,7 +870,8 @@ m29_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -861,7 +893,8 @@ m30_logit <- glm(incidence_terr_flag ~ status_excl +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -884,7 +917,8 @@ m31_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -918,7 +952,8 @@ m32_logit <- glm(onset_ko_flag ~ nbp_any_loi +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -941,7 +976,8 @@ m33_logit <- glm(incidence_flag ~ nbp_any_loi +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -964,7 +1000,8 @@ m34_logit <- glm(incidence_terr_flag ~ nbp_any_loi +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -988,7 +1025,8 @@ m35_logit <- glm(onset_ko_flag ~ nbp_any_lc +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -1011,7 +1049,8 @@ m36_logit <- glm(incidence_flag ~ nbp_any_lc +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -1034,7 +1073,8 @@ m37_logit <- glm(incidence_terr_flag ~ nbp_any_lc +
                    nbp_groups_count +
                    groupsize +
                    log(pop) +
-                   log(rgdpe),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis,
                  family = binomial())
 
@@ -1058,7 +1098,10 @@ m1_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                     peaceyears +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count | iso3c,
+                    nbp_groups_count +
+                    groupsize +
+                    log(pop) +
+                    log(lag_rgdpe) | iso3c,
                   data = df_analysis,
                   family = binomial())
 
@@ -1291,7 +1334,7 @@ m1_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1315,7 +1358,7 @@ m2_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1338,7 +1381,7 @@ m3_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1362,7 +1405,7 @@ m4_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1385,7 +1428,7 @@ m5_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1408,7 +1451,8 @@ m6_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize + 
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1429,9 +1473,10 @@ m7_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       tek_egip +
                       lag_Polity2 +
                       nbp_groups_count +
-                      #groupsize +
+                      groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1455,7 +1500,8 @@ m8_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1479,7 +1525,7 @@ m1_intensity <- glm(intensity_level ~ nbp_anydown_1 +
                       Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1502,7 +1548,7 @@ m2_intensity <- glm(intensity_level ~ HI +
                       Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1525,7 +1571,8 @@ m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1548,7 +1595,7 @@ m4_intensity <- glm(intensity_level ~ lag_HI +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1572,7 +1619,8 @@ m5_intensity <- glm(intensity_level ~ Monolingual +
                       Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe) +
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1595,7 +1643,7 @@ m6_intensity <- glm(intensity_level ~ lag_Monolingual +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(rgdpe),
+                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 

@@ -25,6 +25,7 @@ library(fixest)
 library(stargazer)
 
 ###---- Data --------------------------------------------------------------------
+
 df_complete <- read_dta("EPR2NBP_Emre2.dta")%>%
   mutate(across(starts_with(c("anydown", "anyupgrade")), as.factor)) %>%
   rename_with(~ paste0("nbp_",.), starts_with(c("anydown", "anyupgrade"))) %>%
@@ -79,6 +80,7 @@ df_complete <- df_complete %>%
   ))
 
 # use one country to manually check the changes (can be ignored)
+
 df_cambodia <- df_complete %>%
   filter(Country == "Cambodia") %>%
   select(c(Country, Year, CountryDateStart, CountryDateEnd, Group, starts_with("nbp_")))
