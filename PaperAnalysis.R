@@ -38,6 +38,7 @@ df_analysis_conflicts <- read.csv("NBP_conflict_paper_analysis_c.csv") # this is
 # COMPARING POLITICAL AND EDUCATIONAL DOWNGRADES
 
 # ONSET
+=======
 
 m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
                   groupsize +
