@@ -26,7 +26,9 @@ library(stargazer)
 
 ###---- Data --------------------------------------------------------------------
 
-df_complete <- read_dta("EPR2NBP_Emre2.dta")%>%
+#df_complete <- read_dta("EPR2NBP_Emre2.dta")%>%
+
+df_complete <- read.csv("EPR2NBP_2025-csv.csv")%>%
   mutate(across(starts_with(c("anydown", "anyupgrade")), as.factor)) %>%
   rename_with(~ paste0("nbp_",.), starts_with(c("anydown", "anyupgrade"))) %>%
   mutate(across(starts_with(c("downgraded", "upgraded")), as.factor)) %>%
@@ -185,6 +187,9 @@ df_polity5 <- df_polity5 %>%
 
 df_polity5 <- df_polity5%>%
   mutate(Year = as.numeric(as.character(Year)))
+
+df_polity5 <- df_polity5 %>%
+  select(c(iso3c, Year, Polity2))
 
 # EPR GrowUp data
 
@@ -1347,7 +1352,7 @@ df_monolingual <- df_languages_summarised %>%
 
 summary(as.factor(df_monolingual$Monolingual))
 
-openxlsx::write.xlsx(df_monolingual, "nbp_monolingualc_soft_rev.xlsx")
+openxlsx::write.xlsx(df_monolingual, "nbp_monolingualc_soft_rev_2025.xlsx")
 
 # dummy to complete dataset
 
@@ -1801,22 +1806,22 @@ str(df_complete$EPRIDgroup)
 
 # any TEK
 
-df_tek_2 <- df_epr_gu %>%
-  select(c(gwgroupid, year, tek_count))%>%
-  rename(Year = year) %>%
-  mutate(gwgroupid = as.factor(gwgroupid),
-         Year = as.numeric(as.character(Year))) 
-
-df_complete <- df_complete %>%
-    rowwise() %>%
-    mutate(tek_egip_dummy = ifelse(
-      any(c_across(contains("EPRID")) %in%
-            df_tek_2[df_tek_2$Year == Year, ]$gwgroupid),
-      1, 0
-    )) %>%
-    ungroup()
-
-summary(df_complete$tek_egip_dummy)
+# df_tek_2 <- df_epr_gu %>%
+#   select(c(gwgroupid, year, tek_count))%>%
+#   rename(Year = year) %>%
+#   mutate(gwgroupid = as.factor(gwgroupid),
+#          Year = as.numeric(as.character(Year))) 
+# 
+# df_complete <- df_complete %>%
+#     rowwise() %>%
+#     mutate(tek_egip_dummy = ifelse(
+#       any(c_across(contains("EPRID")) %in%
+#             df_tek_2[df_tek_2$Year == Year, ]$gwgroupid),
+#       1, 0
+#     )) %>%
+#     ungroup()
+# 
+# summary(df_complete$tek_egip_dummy)
 
 ## I think there is an issue with the EPR Group ID variable in the nbp dataset. The id should have 6 digits, indicating country and group; here starts with "1" - have there been any changes?
 
@@ -1892,7 +1897,7 @@ summary(as.factor(df_complete$onset_ko_flag))
 summary(as.factor(df_complete$incidence_flag))
 
 df_analysis <- df_complete %>%
-  select(iso3c, Year, Group, groupname, EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict)
+  select(iso3c, Year, Group, groupname, starts_with("EPRID"), EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict)
 
 df_analysis <- df_analysis %>%
   mutate(as.numeric(as.character(Year)))
@@ -1916,7 +1921,8 @@ lag_vars <- c("nbp_anydown_1",
               "status_excl",
               "epr_downgraded1", 
               "Monolingual",
-              "MonolingualStrict")
+              "MonolingualStrict",
+              "pop")
 
 df_analysis <- df_analysis %>%
   arrange(Year) %>%
@@ -1932,8 +1938,8 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
-write.csv(df_analysis, "NBP_conflict_paper_analysis.csv")
-write.csv(df_analysis_conflicts, "NBP_conflict_paper_analysis_c.csv")
+write.csv(df_analysis, "NBP_2025_conflict_paper_analysis.csv")
+write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c.csv")
 
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?

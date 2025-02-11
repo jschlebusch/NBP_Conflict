@@ -14,8 +14,10 @@ library(writexl)
 ##---- Data --------------------------------------------------------------------
 #read the data
 
-df_NBP <- read_dta("NBP_groups_final.dta")%>%
-  mutate(across(contains("EPRID"), as.factor))
+#df_NBP <- read_dta("NBP_groups_final.dta")%>%
+#  mutate(across(contains("EPRID"), as.factor))
+
+df_NBP <- read_dta("NBP_2025.dta")
 df_EPR <- read.csv("EPRConflict.csv") %>%
   mutate(gwgroupid = as.factor(gwgroupid)) %>%
   rename(Year = year)
@@ -172,7 +174,36 @@ df_merge_subgroup2 <- df_merge_subgroup2 %>%
 df_merge_subgroup3 <- df_merge_subgroup3 %>%
   mutate(EPRMergeLevel = as.character(EPRMergeLevel))
 
+
+df_groupmerge <- df_groupmerge %>%
+  mutate(EPRIDgroup = as.character(EPRIDgroup),
+         EPRIDsubgroup1 = as.character(EPRIDsubgroup1),
+         EPRIDsubgroup2 = as.character(EPRIDsubgroup2),
+         EPRIDsubgroup3 = as.character(EPRIDsubgroup3))
+
+
+df_merge_subgroup1 <- df_merge_subgroup1 %>%
+  mutate(EPRIDgroup = as.character(EPRIDgroup),
+         EPRIDsubgroup1 = as.character(EPRIDsubgroup1),
+         EPRIDsubgroup2 = as.character(EPRIDsubgroup2),
+         EPRIDsubgroup3 = as.character(EPRIDsubgroup3))
+
+
+df_merge_subgroup2 <- df_merge_subgroup2 %>%
+  mutate(EPRIDgroup = as.character(EPRIDgroup),
+         EPRIDsubgroup1 = as.character(EPRIDsubgroup1),
+         EPRIDsubgroup2 = as.character(EPRIDsubgroup2),
+         EPRIDsubgroup3 = as.character(EPRIDsubgroup3))
+
+
+df_merge_subgroup3 <- df_merge_subgroup3 %>%
+  mutate(EPRIDgroup = as.character(EPRIDgroup),
+         EPRIDsubgroup1 = as.character(EPRIDsubgroup1),
+         EPRIDsubgroup2 = as.character(EPRIDsubgroup2),
+         EPRIDsubgroup3 = as.character(EPRIDsubgroup3))
+
 print(df_merge_subgroup1$EPRIDsubgroup1)
+print(df_merge_subgroup1$EPRID)
 
 df_EPR2NBP <- bind_rows(
   subset(df_groupmerge, !is.na(EPRMergeLevel)),        
@@ -189,13 +220,16 @@ nrow(distinct(df_EPR2NBP))
 df_EPR2NBP <- df_EPR2NBP %>%
   mutate(EPRMergeLevel = as.factor(EPRMergeLevel)) 
 
+df_EPR2NBP <- df_EPR2NBP %>%
+  distinct()
+
 summary(df_EPR2NBP)
 
 summary(df_EPR2NBP$EPRMergeLevel)
 
-write.csv(df_EPR2NBP, "EPR2NBP-csv.csv")
+write.csv(df_EPR2NBP, "EPR2NBP_2025-csv.csv")
 #write_dta(df_EPR2NBP, "EPR2NBP.dta")
-write_dta(df_EPR2NBP, "EPR2NBP-dta_new.dta")
+write_dta(df_EPR2NBP, "EPR2NBP-dta_new2.dta", label = NULL)
 
 #check against Andrei's results
 
