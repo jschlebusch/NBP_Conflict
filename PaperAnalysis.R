@@ -1619,7 +1619,8 @@ m5_intensity <- glm(intensity_level ~ Monolingual +
                       Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe) +
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
