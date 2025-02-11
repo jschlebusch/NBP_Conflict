@@ -1451,7 +1451,8 @@ m6_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize + 
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1472,9 +1473,10 @@ m7_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       tek_egip +
                       lag_Polity2 +
                       nbp_groups_count +
-                      #groupsize +
+                      groupsize +
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1498,7 +1500,8 @@ m8_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis,
                     family = binomial())
 
@@ -1522,7 +1525,7 @@ m1_intensity <- glm(intensity_level ~ nbp_anydown_1 +
                       Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1568,7 +1571,8 @@ m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
