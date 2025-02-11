@@ -1930,6 +1930,9 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
+write.csv(df_analysis, "NBP_conflict_paper_analysis.csv")
+write.csv(df_analysis_conflicts, "NBP_conflict_paper_analysis_c.csv")
+
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?
 # 2) how do we account for vars at the subgroup level due to merging - if-any?

@@ -27,7 +27,8 @@ library(stargazer)
 
 # Load data
 
-df_analysis <- read.csv("NBP_conflict_paper_analysis_c.csv")
+df_analysis <- read.csv("NBP_conflict_paper_analysis.csv") 
+df_analysis_conflicts <- read.csv("NBP_conflict_paper_analysis_c.csv") # this is the conflict level data
 
 # FOR JAN TO DO:
 
