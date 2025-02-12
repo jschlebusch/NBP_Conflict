@@ -1619,7 +1619,10 @@ print(m8_lag_summary_clustered)
 
 # CONFLICT INTENSITY
 
-m1_intensity <- glm(intensity_level ~ nbp_anydown_1 + 
+df_analysis_conflicts$intensity_binary <- ifelse(df_analysis_conflicts$intensity_level == 2, 1, 0)
+
+
+m1_intensity <- glm(intensity_binary ~ nbp_anydown_1 + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1642,7 +1645,7 @@ print(m1_intensity_summary_clustered)
 
 
 
-m2_intensity <- glm(intensity_level ~ HI + 
+m2_intensity <- glm(intensity_binary ~ HI + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1651,7 +1654,8 @@ m2_intensity <- glm(intensity_level ~ HI +
                       Polity2 +
                       nbp_groups_count +
                       log(lag_pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3) +                   factor(un.region.name),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1665,7 +1669,7 @@ print(m2_intensity_summary_clustered)
 
 
 
-m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 + 
+m3_intensity <- glm(intensity_binary ~ lag_nbp_anydown_1 + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
@@ -1675,7 +1679,7 @@ m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
-                      ns(peaceyears, df = 3) +                   factor(un.region.name),
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1689,7 +1693,7 @@ print(m3_intensity_summary_clustered)
 
 
 
-m4_intensity <- glm(intensity_level ~ lag_HI + 
+m4_intensity <- glm(intensity_binary ~ lag_HI + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
@@ -1698,7 +1702,8 @@ m4_intensity <- glm(intensity_level ~ lag_HI +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(lag_pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3) +                   factor(un.region.name),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1713,7 +1718,7 @@ print(m4_intensity_summary_clustered)
 
 
 
-m5_intensity <- glm(intensity_level ~ Monolingual + 
+m5_intensity <- glm(intensity_binary ~ Monolingual + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1723,7 +1728,7 @@ m5_intensity <- glm(intensity_level ~ Monolingual +
                       nbp_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe) +
-                      ns(peaceyears, df = 3) +                   factor(un.region.name),
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
@@ -1737,7 +1742,7 @@ print(m5_intensity_summary_clustered)
 
 
 
-m6_intensity <- glm(intensity_level ~ lag_Monolingual + 
+m6_intensity <- glm(intensity_binary ~ lag_Monolingual + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
@@ -1746,7 +1751,8 @@ m6_intensity <- glm(intensity_level ~ lag_Monolingual +
                       lag_Polity2 +
                       nbp_groups_count +
                       log(lag_pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3) +                   factor(un.region.name),
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
                     data = df_analysis_conflicts,
                     family = binomial())
 
