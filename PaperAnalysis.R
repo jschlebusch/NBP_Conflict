@@ -67,6 +67,12 @@ df_analysis_group <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
   mutate(lag_nbp_anydown_1 = lag(nbp_anydown_1))
 
+df_analysis_group <- df_analysis_group %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
+
+
+
 # Incorporate Region Codes for Regional Controls
 
 df_cc <- countrycode::codelist %>%
@@ -80,6 +86,110 @@ df_cc_NA <- df_cc %>%
 
 df_analysis_group <- df_analysis_group %>%
   left_join(df_cc, by = "iso3c")
+
+
+## PAPER MODELS
+
+m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+                  nbp_educational_exclusion +
+                  groupsize +
+                  SpatialConc +
+                  warhist +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  log(lag_pop) +
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
+                data = df_analysis_group,
+                family = binomial())
+
+summary(m1_logit)
+
+m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+
+m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+
+print(m1_summary_clustered)
+
+# WITH POLITICAL
+
+m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+                  nbp_educational_exclusion +
+                  epr_downgraded1 +
+                  status_excl +
+                  groupsize +
+                  SpatialConc +
+                  warhist +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  log(lag_pop) +
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
+                data = df_analysis_group,
+                family = binomial())
+
+summary(m1_logit)
+
+m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+
+m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+
+print(m1_summary_clustered)
+
+# PUBLIC EXCLUSION
+
+m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+                  nbp_public_exclusion +
+                  epr_downgraded1 +
+                  status_excl +
+                  groupsize +
+                  SpatialConc +
+                  warhist +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  log(lag_pop) +
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
+                data = df_analysis_group,
+                family = binomial())
+
+summary(m1_logit)
+
+m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+
+m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+
+print(m1_summary_clustered)
+
+# INCIDENCE
+
+
+m1_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
+                  nbp_educational_exclusion +
+                  epr_downgraded1 +
+                  status_excl +
+                  groupsize +
+                  SpatialConc +
+                  warhist +
+                  tek_egip +
+                  lag_Polity2 +
+                  nbp_groups_count +
+                  log(lag_pop) +
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
+                data = df_analysis_group,
+                family = binomial())
+
+summary(m1_logit)
+
+m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+
+m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+
+print(m1_summary_clustered)
 
 
 
