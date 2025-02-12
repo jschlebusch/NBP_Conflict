@@ -1619,10 +1619,10 @@ print(m8_lag_summary_clustered)
 
 # CONFLICT INTENSITY
 
-df_analysis_conflicts$intensity_binary <- ifelse(df_analysis_conflicts$intensity_level == 2, 1, 0)
+df_analysis_conflicts$intensity_level <- factor(df_analysis_conflicts$intensity_level, levels = c(1, 2))
 
 
-m1_intensity <- glm(intensity_binary ~ nbp_anydown_1 + 
+m1_intensity <- glm(intensity_level ~ nbp_anydown_1 + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1645,7 +1645,7 @@ print(m1_intensity_summary_clustered)
 
 
 
-m2_intensity <- glm(intensity_binary ~ HI + 
+m2_intensity <- glm(intensity_level ~ HI + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1669,7 +1669,7 @@ print(m2_intensity_summary_clustered)
 
 
 
-m3_intensity <- glm(intensity_binary ~ lag_nbp_anydown_1 + 
+m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
@@ -1693,7 +1693,7 @@ print(m3_intensity_summary_clustered)
 
 
 
-m4_intensity <- glm(intensity_binary ~ lag_HI + 
+m4_intensity <- glm(intensity_level ~ lag_HI + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
@@ -1718,7 +1718,7 @@ print(m4_intensity_summary_clustered)
 
 
 
-m5_intensity <- glm(intensity_binary ~ Monolingual + 
+m5_intensity <- glm(intensity_level ~ Monolingual + 
                       groupsize +
                       SpatialConc +
                       warhist +
@@ -1742,7 +1742,7 @@ print(m5_intensity_summary_clustered)
 
 
 
-m6_intensity <- glm(intensity_binary ~ lag_Monolingual + 
+m6_intensity <- glm(intensity_level ~ lag_Monolingual + 
                       lag_groupsize +
                       lag_SpatialConc +
                       warhist +
