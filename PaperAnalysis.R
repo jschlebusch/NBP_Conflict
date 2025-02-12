@@ -6,6 +6,12 @@
 ### 02/2025
 ###-----------------------------------------------------------------------------
 
+# New Packages
+
+install.packages("margins")
+install.packages("ggeffects")
+install.packages("MatchIt")
+
 # Load libraries
 
 library(tidyverse)
@@ -25,6 +31,10 @@ library(plm)
 library(fixest)
 library(stargazer)
 library(splines)
+library(car)
+library(margins)
+library(ggeffects)
+library(MatchIt)
 
 
 # Load data
@@ -33,14 +43,31 @@ df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis.csv") # this is 
 df_analysis_conflics <- read.csv("NBP_2025_conflict_paper_analysis_c.csv") # this is the conflict level data
 
 
+# ANYDOWN and LAG: Issue Check
+
+check_lag <- df_analysis_group %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(expected_lag = lag(nbp_anydown_1)) %>%
+  summarise(correct = sum(lag_nbp_anydown_1 == expected_lag, na.rm = TRUE),
+            incorrect = sum(lag_nbp_anydown_1 != expected_lag, na.rm = TRUE))
+
+print(check_lag)
+
+mismatches <- df_analysis_group %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(expected_lag = lag(nbp_anydown_1)) %>%
+  filter(lag_nbp_anydown_1 != expected_lag & !is.na(lag_nbp_anydown_1) & !is.na(expected_lag))
+
+View(mismatches)
+
+
 ###---- ANALYSIS ---------------------------------------------------------------
 
 # COMPARING POLITICAL AND EDUCATIONAL DOWNGRADES
 
 # ONSET
 
-
-m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+m1_logit <- glm(onset_ko_flag ~ nbp_anydown_1 + 
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -48,15 +75,15 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                   tek_egip +
                   lag_Polity2 +
                   nbp_groups_count +
-                  log(lag_lag_pop) +
+                  log(lag_pop) +
                   log(lag_rgdpe) +
                 ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m1_logit)
 
-m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis$iso3c)
+m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
 
 m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
@@ -73,12 +100,12 @@ m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m2_logit)
 
-m2_vcov_cluster <- vcovCL(m2_logit, cluster = df_analysis$iso3c)
+m2_vcov_cluster <- vcovCL(m2_logit, cluster = df_analysis_group$iso3c)
 
 m2_summary_clustered <- coeftest(m2_logit, vcov = m2_vcov_cluster)
 
@@ -97,20 +124,20 @@ m3_logit <- glm(onset_ko_flag ~ nbp_anydown_1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m3_logit)
 
-m3_vcov_cluster <- vcovCL(m3_logit, cluster = df_analysis$iso3c)
+m3_vcov_cluster <- vcovCL(m3_logit, cluster = df_analysis_group$iso3c)
 
 m3_summary_clustered <- coeftest(m3_logit, vcov = m3_vcov_cluster)
 
 print(m3_summary_clustered)
 
-# incidence
+# Interaction Terms: Investigate(!)
 
-m4_logit <- glm(incidence_flag ~ lag_nbp_anydown_1 + 
+m3i_logit <- glm(onset_ko_flag ~ nbp_anydown_1 * epr_downgraded1 + 
                   SpatialConc +
                   warhist +
                   peaceyears +
@@ -121,12 +148,45 @@ m4_logit <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
+                family = binomial())
+
+summary(m3i_logit)
+
+# Clustered Standard Errors
+
+m3i_vcov_cluster <- vcovCL(m3i_logit, cluster = df_analysis_group$iso3c)
+m3i_summary_clustered <- coeftest(m3i_logit, vcov = m3i_vcov_cluster)
+
+print(m3i_summary_clustered)
+
+interaction_plot <- ggpredict(m3i_logit, terms = c("nbp_anydown_1", "epr_downgraded1"))
+plot(interaction_plot)
+
+df_analysis_group %>%
+  group_by(nbp_anydown_1, epr_downgraded1) %>%
+  summarise(prob_onset = mean(onset_ko_flag, na.rm = TRUE),
+            count = n())
+
+# incidence
+
+m4_logit <- glm(incidence_flag ~ nbp_anydown_1 + 
+                  SpatialConc +
+                  warhist +
+                  peaceyears +
+                  tek_egip +
+                  Polity2 +
+                  nbp_groups_count +
+                  groupsize +
+                  log(lag_pop) +
+                  log(lag_rgdpe) +
+                  ns(peaceyears, df = 3),
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m4_logit)
 
-m4_vcov_cluster <- vcovCL(m4_logit, cluster = df_analysis$iso3c)
+m4_vcov_cluster <- vcovCL(m4_logit, cluster = df_analysis_group$iso3c)
 
 m4_summary_clustered <- coeftest(m4_logit, vcov = m4_vcov_cluster)
 
@@ -144,12 +204,12 @@ m5_logit <- glm(incidence_flag ~ epr_downgraded1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m5_logit)
 
-m5_vcov_cluster <- vcovCL(m5_logit, cluster = df_analysis$iso3c)
+m5_vcov_cluster <- vcovCL(m5_logit, cluster = df_analysis_group$iso3c)
 
 m5_summary_clustered <- coeftest(m5_logit, vcov = m5_vcov_cluster)
 
@@ -168,12 +228,12 @@ m6_logit <- glm(incidence_flag ~ nbp_anydown_1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m6_logit)
 
-m6_vcov_cluster <- vcovCL(m6_logit, cluster = df_analysis$iso3c)
+m6_vcov_cluster <- vcovCL(m6_logit, cluster = df_analysis_group$iso3c)
 
 m6_summary_clustered <- coeftest(m6_logit, vcov = m6_vcov_cluster)
 
@@ -192,12 +252,12 @@ m7_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                 ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m7_logit)
 
-m7_vcov_cluster <- vcovCL(m7_logit, cluster = df_analysis$iso3c)
+m7_vcov_cluster <- vcovCL(m7_logit, cluster = df_analysis_group$iso3c)
 
 m7_summary_clustered <- coeftest(m7_logit, vcov = m7_vcov_cluster)
 
@@ -215,12 +275,12 @@ m8_logit <- glm(onset_ko_terr_flag ~ epr_downgraded1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m8_logit)
 
-m8_vcov_cluster <- vcovCL(m8_logit, cluster = df_analysis$iso3c)
+m8_vcov_cluster <- vcovCL(m8_logit, cluster = df_analysis_group$iso3c)
 
 m8_summary_clustered <- coeftest(m8_logit, vcov = m8_vcov_cluster)
 
@@ -239,12 +299,12 @@ m9_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
-                data = df_analysis,
+                data = df_analysis_group,
                 family = binomial())
 
 summary(m9_logit)
 
-m9_vcov_cluster <- vcovCL(m9_logit, cluster = df_analysis$iso3c)
+m9_vcov_cluster <- vcovCL(m9_logit, cluster = df_analysis_group$iso3c)
 
 m9_summary_clustered <- coeftest(m9_logit, vcov = m9_vcov_cluster)
 
@@ -263,12 +323,12 @@ m10_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    log(lag_pop) +
                    log(lag_rgdpe) +
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m10_logit)
 
-m10_vcov_cluster <- vcovCL(m10_logit, cluster = df_analysis$iso3c)
+m10_vcov_cluster <- vcovCL(m10_logit, cluster = df_analysis_group$iso3c)
 
 m10_summary_clustered <- coeftest(m10_logit, vcov = m10_vcov_cluster)
 
@@ -286,12 +346,12 @@ m11_logit <- glm(incidence_terr_flag ~ epr_downgraded1 +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m11_logit)
 
-m11_vcov_cluster <- vcovCL(m11_logit, cluster = df_analysis$iso3c)
+m11_vcov_cluster <- vcovCL(m11_logit, cluster = df_analysis_group$iso3c)
 
 m11_summary_clustered <- coeftest(m11_logit, vcov = m11_vcov_cluster)
 
@@ -310,12 +370,12 @@ m12_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m12_logit)
 
-m12_vcov_cluster <- vcovCL(m12_logit, cluster = df_analysis$iso3c)
+m12_vcov_cluster <- vcovCL(m12_logit, cluster = df_analysis_group$iso3c)
 
 m12_summary_clustered <- coeftest(m12_logit, vcov = m12_vcov_cluster)
 
@@ -348,12 +408,12 @@ m13_logit <- glm(onset_ko_flag ~ HI +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m13_logit)
 
-m13_vcov_cluster <- vcovCL(m13_logit, cluster = df_analysis$iso3c)
+m13_vcov_cluster <- vcovCL(m13_logit, cluster = df_analysis_group$iso3c)
 
 m13_summary_clustered <- coeftest(m13_logit, vcov = m13_vcov_cluster)
 
@@ -371,12 +431,12 @@ m14_logit <- glm(onset_ko_terr_flag ~ HI +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m14_logit)
 
-m14_vcov_cluster <- vcovCL(m14_logit, cluster = df_analysis$iso3c)
+m14_vcov_cluster <- vcovCL(m14_logit, cluster = df_analysis_group$iso3c)
 
 m14_summary_clustered <- coeftest(m14_logit, vcov = m14_vcov_cluster)
 
@@ -393,12 +453,12 @@ m15_logit <- glm(incidence_flag ~ HI +
                    groupsize + 
                    log(lag_pop) +
                    log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m15_logit)
 
-m15_vcov_cluster <- vcovCL(m15_logit, cluster = df_analysis$iso3c)
+m15_vcov_cluster <- vcovCL(m15_logit, cluster = df_analysis_group$iso3c)
 
 m15_summary_clustered <- coeftest(m15_logit, vcov = m14_vcov_cluster)
 
@@ -416,12 +476,12 @@ m16_logit <- glm(incidence_terr_flag ~ HI +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m16_logit)
 
-m16_vcov_cluster <- vcovCL(m16_logit, cluster = df_analysis$iso3c)
+m16_vcov_cluster <- vcovCL(m16_logit, cluster = df_analysis_group$iso3c)
 
 m16_summary_clustered <- coeftest(m16_logit, vcov = m16_vcov_cluster)
 
@@ -439,12 +499,12 @@ m17_logit <- glm(SDM ~ nbp_anydown_1 +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m17_logit)
 
-m17_vcov_cluster <- vcovCL(m17_logit, cluster = df_analysis$iso3c)
+m17_vcov_cluster <- vcovCL(m17_logit, cluster = df_analysis_group$iso3c)
 
 m17_summary_clustered <- coeftest(m17_logit, vcov = m17_vcov_cluster)
 
@@ -461,12 +521,12 @@ m18_logit <- glm(SDM ~ epr_downgraded1 +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m18_logit)
 
-m18_vcov_cluster <- vcovCL(m18_logit, cluster = df_analysis$iso3c)
+m18_vcov_cluster <- vcovCL(m18_logit, cluster = df_analysis_group$iso3c)
 
 m18_summary_clustered <- coeftest(m18_logit, vcov = m18_vcov_cluster)
 
@@ -485,12 +545,12 @@ m19_logit <- glm(SDM ~ nbp_anydown_1 +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m19_logit)
 
-m19_vcov_cluster <- vcovCL(m19_logit, cluster = df_analysis$iso3c)
+m19_vcov_cluster <- vcovCL(m19_logit, cluster = df_analysis_group$iso3c)
 
 m19_summary_clustered <- coeftest(m19_logit, vcov = m19_vcov_cluster)
 
@@ -659,12 +719,12 @@ m20_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m20_logit)
 
-m20_vcov_cluster <- vcovCL(m20_logit, cluster = df_analysis$iso3c)
+m20_vcov_cluster <- vcovCL(m20_logit, cluster = df_analysis_group$iso3c)
 
 m20_summary_clustered <- coeftest(m20_logit, vcov = m20_vcov_cluster)
 
@@ -683,12 +743,12 @@ m21_logit <- glm(onset_ko_flag ~ nbp_public_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m21_logit)
 
-m21_vcov_cluster <- vcovCL(m21_logit, cluster = df_analysis$iso3c)
+m21_vcov_cluster <- vcovCL(m21_logit, cluster = df_analysis_group$iso3c)
 
 m21_summary_clustered <- coeftest(m21_logit, vcov = m21_vcov_cluster)
 
@@ -707,12 +767,12 @@ m22_logit <- glm(onset_ko_flag ~ status_excl +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m22_logit)
 
-m22_vcov_cluster <- vcovCL(m22_logit, cluster = df_analysis$iso3c)
+m22_vcov_cluster <- vcovCL(m22_logit, cluster = df_analysis_group$iso3c)
 
 m22_summary_clustered <- coeftest(m22_logit, vcov = m22_vcov_cluster)
 
@@ -731,12 +791,12 @@ m23_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m23_logit)
 
-m23_vcov_cluster <- vcovCL(m23_logit, cluster = df_analysis$iso3c)
+m23_vcov_cluster <- vcovCL(m23_logit, cluster = df_analysis_group$iso3c)
 
 m23_summary_clustered <- coeftest(m23_logit, vcov = m23_vcov_cluster)
 
@@ -756,12 +816,12 @@ m24_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m24_logit)
 
-m24_vcov_cluster <- vcovCL(m24_logit, cluster = df_analysis$iso3c)
+m24_vcov_cluster <- vcovCL(m24_logit, cluster = df_analysis_group$iso3c)
 
 m24_summary_clustered <- coeftest(m24_logit, vcov = m24_vcov_cluster)
 
@@ -779,12 +839,12 @@ m25_logit <- glm(incidence_flag ~ nbp_public_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m25_logit)
 
-m25_vcov_cluster <- vcovCL(m25_logit, cluster = df_analysis$iso3c)
+m25_vcov_cluster <- vcovCL(m25_logit, cluster = df_analysis_group$iso3c)
 
 m25_summary_clustered <- coeftest(m25_logit, vcov = m25_vcov_cluster)
 
@@ -802,12 +862,12 @@ m26_logit <- glm(incidence_flag ~ status_excl +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m26_logit)
 
-m26_vcov_cluster <- vcovCL(m26_logit, cluster = df_analysis$iso3c)
+m26_vcov_cluster <- vcovCL(m26_logit, cluster = df_analysis_group$iso3c)
 
 m26_summary_clustered <- coeftest(m26_logit, vcov = m26_vcov_cluster)
 
@@ -825,12 +885,12 @@ m27_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m27_logit)
 
-m27_vcov_cluster <- vcovCL(m27_logit, cluster = df_analysis$iso3c)
+m27_vcov_cluster <- vcovCL(m27_logit, cluster = df_analysis_group$iso3c)
 
 m27_summary_clustered <- coeftest(m27_logit, vcov = m27_vcov_cluster)
 
@@ -849,12 +909,12 @@ m28_logit <- glm(incidence_terr_flag ~ nbp_educational_exclusion +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m28_logit)
 
-m28_vcov_cluster <- vcovCL(m28_logit, cluster = df_analysis$iso3c)
+m28_vcov_cluster <- vcovCL(m28_logit, cluster = df_analysis_group$iso3c)
 
 m28_summary_clustered <- coeftest(m28_logit, vcov = m28_vcov_cluster)
 
@@ -872,12 +932,12 @@ m29_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m29_logit)
 
-m29_vcov_cluster <- vcovCL(m29_logit, cluster = df_analysis$iso3c)
+m29_vcov_cluster <- vcovCL(m29_logit, cluster = df_analysis_group$iso3c)
 
 m29_summary_clustered <- coeftest(m29_logit, vcov = m29_vcov_cluster)
 
@@ -895,12 +955,12 @@ m30_logit <- glm(incidence_terr_flag ~ status_excl +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m30_logit)
 
-m30_vcov_cluster <- vcovCL(m30_logit, cluster = df_analysis$iso3c)
+m30_vcov_cluster <- vcovCL(m30_logit, cluster = df_analysis_group$iso3c)
 
 m30_summary_clustered <- coeftest(m30_logit, vcov = m30_vcov_cluster)
 
@@ -919,12 +979,12 @@ m31_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m31_logit)
 
-m31_vcov_cluster <- vcovCL(m31_logit, cluster = df_analysis$iso3c)
+m31_vcov_cluster <- vcovCL(m31_logit, cluster = df_analysis_group$iso3c)
 
 m31_summary_clustered <- coeftest(m31_logit, vcov = m31_vcov_cluster)
 
@@ -954,12 +1014,12 @@ m32_logit <- glm(onset_ko_flag ~ nbp_any_loi +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m32_logit)
 
-m32_vcov_cluster <- vcovCL(m32_logit, cluster = df_analysis$iso3c)
+m32_vcov_cluster <- vcovCL(m32_logit, cluster = df_analysis_group$iso3c)
 
 m32_summary_clustered <- coeftest(m32_logit, vcov = m32_vcov_cluster)
 
@@ -978,12 +1038,12 @@ m33_logit <- glm(incidence_flag ~ nbp_any_loi +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m33_logit)
 
-m33_vcov_cluster <- vcovCL(m33_logit, cluster = df_analysis$iso3c)
+m33_vcov_cluster <- vcovCL(m33_logit, cluster = df_analysis_group$iso3c)
 
 m33_summary_clustered <- coeftest(m33_logit, vcov = m33_vcov_cluster)
 
@@ -1002,12 +1062,12 @@ m34_logit <- glm(incidence_terr_flag ~ nbp_any_loi +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m34_logit)
 
-m34_vcov_cluster <- vcovCL(m34_logit, cluster = df_analysis$iso3c)
+m34_vcov_cluster <- vcovCL(m34_logit, cluster = df_analysis_group$iso3c)
 
 m34_summary_clustered <- coeftest(m34_logit, vcov = m34_vcov_cluster)
 
@@ -1027,12 +1087,12 @@ m35_logit <- glm(onset_ko_flag ~ nbp_any_lc +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m35_logit)
 
-m35_vcov_cluster <- vcovCL(m35_logit, cluster = df_analysis$iso3c)
+m35_vcov_cluster <- vcovCL(m35_logit, cluster = df_analysis_group$iso3c)
 
 m35_summary_clustered <- coeftest(m35_logit, vcov = m35_vcov_cluster)
 
@@ -1051,12 +1111,12 @@ m36_logit <- glm(incidence_flag ~ nbp_any_lc +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m36_logit)
 
-m36_vcov_cluster <- vcovCL(m36_logit, cluster = df_analysis$iso3c)
+m36_vcov_cluster <- vcovCL(m36_logit, cluster = df_analysis_group$iso3c)
 
 m36_summary_clustered <- coeftest(m36_logit, vcov = m36_vcov_cluster)
 
@@ -1075,12 +1135,12 @@ m37_logit <- glm(incidence_terr_flag ~ nbp_any_lc +
                    log(lag_pop) +
                    log(lag_rgdpe)+
                    ns(peaceyears, df = 3),
-                 data = df_analysis,
+                 data = df_analysis_group,
                  family = binomial())
 
 summary(m37_logit)
 
-m37_vcov_cluster <- vcovCL(m37_logit, cluster = df_analysis$iso3c)
+m37_vcov_cluster <- vcovCL(m37_logit, cluster = df_analysis_group$iso3c)
 
 m37_summary_clustered <- coeftest(m37_logit, vcov = m37_vcov_cluster)
 
@@ -1102,7 +1162,7 @@ m1_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m1_fixed)
@@ -1116,7 +1176,7 @@ m2_fixed <- feglm(onset_ko_flag ~ epr_downgraded1 +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m2_fixed)
@@ -1131,7 +1191,7 @@ m3_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m3_fixed)
@@ -1145,7 +1205,7 @@ m4_fixed <- feglm(onset_ko_flag ~ HI +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m4_fixed)
@@ -1159,7 +1219,7 @@ m5_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m5_fixed)
@@ -1173,7 +1233,7 @@ m6_fixed <- feglm(incidence_flag ~ epr_downgraded1 +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m6_fixed)
@@ -1188,7 +1248,7 @@ m7_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m7_fixed)
@@ -1202,7 +1262,7 @@ m8_fixed <- feglm(incidence_flag ~ HI +
                     tek_egip +
                     Polity2 +
                     nbp_groups_count | iso3c,
-                  data = df_analysis,
+                  data = df_analysis_group,
                   family = binomial())
 
 summary(m8_fixed)
@@ -1217,7 +1277,7 @@ m1_2w_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m1_2w_fixed)
@@ -1231,7 +1291,7 @@ m2_2w_fixed <- feglm(onset_ko_flag ~ epr_downgraded1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m2_2w_fixed)
@@ -1246,7 +1306,7 @@ m3_2w_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m3_2w_fixed)
@@ -1260,7 +1320,7 @@ m4_2w_fixed <- feglm(onset_ko_flag ~ HI +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m4_2w_fixed)
@@ -1274,7 +1334,7 @@ m5_2w_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m5_2w_fixed)
@@ -1288,7 +1348,7 @@ m6_2w_fixed <- feglm(incidence_flag ~ epr_downgraded1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m6_2w_fixed)
@@ -1303,7 +1363,7 @@ m7_2w_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m7_2w_fixed)
@@ -1317,7 +1377,7 @@ m8_2w_fixed <- feglm(incidence_flag ~ HI +
                        tek_egip +
                        Polity2 +
                        nbp_groups_count | iso3c + Year,
-                     data = df_analysis,
+                     data = df_analysis_group,
                      family = binomial())
 
 summary(m8_2w_fixed)
@@ -1335,17 +1395,16 @@ m1_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m1_logit_lag)
 
-m1_lag_vcov_cluster <- vcovCL(m1_logit_lag, cluster = df_analysis$iso3c)
+m1_lag_vcov_cluster <- vcovCL(m1_logit_lag, cluster = df_analysis_group$iso3c)
 
 m1_lag_summary_clustered <- coeftest(m1_logit_lag, vcov = m1_lag_vcov_cluster)
 
 print(m1_lag_summary_clustered)
-
 
 
 m2_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
@@ -1358,13 +1417,14 @@ m2_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       nbp_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
-                      log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                    data = df_analysis,
+                      log(lag_rgdpe)+
+                      ns(peaceyears, df = 3),
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m2_logit_lag)
 
-m2_lag_vcov_cluster <- vcovCL(m2_logit_lag, cluster = df_analysis$iso3c)
+m2_lag_vcov_cluster <- vcovCL(m2_logit_lag, cluster = df_analysis_group$iso3c)
 
 m2_lag_summary_clustered <- coeftest(m2_logit_lag, vcov = m2_lag_vcov_cluster)
 
@@ -1382,12 +1442,12 @@ m3_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m3_logit_lag)
 
-m3_lag_vcov_cluster <- vcovCL(m3_logit_lag, cluster = df_analysis$iso3c)
+m3_lag_vcov_cluster <- vcovCL(m3_logit_lag, cluster = df_analysis_group$iso3c)
 
 m3_lag_summary_clustered <- coeftest(m3_logit_lag, vcov = m3_lag_vcov_cluster)
 
@@ -1406,12 +1466,12 @@ m4_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m4_logit_lag)
 
-m4_lag_vcov_cluster <- vcovCL(m4_logit_lag, cluster = df_analysis$iso3c)
+m4_lag_vcov_cluster <- vcovCL(m4_logit_lag, cluster = df_analysis_group$iso3c)
 
 m4_lag_summary_clustered <- coeftest(m4_logit_lag, vcov = m4_lag_vcov_cluster)
 
@@ -1429,12 +1489,12 @@ m5_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+                    ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m5_logit_lag)
 
-m5_lag_vcov_cluster <- vcovCL(m5_logit_lag, cluster = df_analysis$iso3c)
+m5_lag_vcov_cluster <- vcovCL(m5_logit_lag, cluster = df_analysis_group$iso3c)
 
 m5_lag_summary_clustered <- coeftest(m5_logit_lag, vcov = m5_lag_vcov_cluster)
 
@@ -1453,12 +1513,12 @@ m6_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m6_logit_lag)
 
-m6_lag_vcov_cluster <- vcovCL(m6_logit_lag, cluster = df_analysis$iso3c)
+m6_lag_vcov_cluster <- vcovCL(m6_logit_lag, cluster = df_analysis_group$iso3c)
 
 m6_lag_summary_clustered <- coeftest(m6_logit_lag, vcov = m6_lag_vcov_cluster)
 
@@ -1477,12 +1537,12 @@ m7_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m7_logit_lag)
 
-m7_lag_vcov_cluster <- vcovCL(m7_logit_lag, cluster = df_analysis$iso3c)
+m7_lag_vcov_cluster <- vcovCL(m7_logit_lag, cluster = df_analysis_group$iso3c)
 
 m7_lag_summary_clustered <- coeftest(m7_logit_lag, vcov = m7_lag_vcov_cluster)
 
@@ -1502,12 +1562,12 @@ m8_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
-                    data = df_analysis,
+                    data = df_analysis_group,
                     family = binomial())
 
 summary(m8_logit_lag)
 
-m8_lag_vcov_cluster <- vcovCL(m8_logit_lag, cluster = df_analysis$iso3c)
+m8_lag_vcov_cluster <- vcovCL(m8_logit_lag, cluster = df_analysis_group$iso3c)
 
 m8_lag_summary_clustered <- coeftest(m8_logit_lag, vcov = m8_lag_vcov_cluster)
 
