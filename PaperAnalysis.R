@@ -67,7 +67,7 @@ View(mismatches)
 
 # ONSET
 
-m1_logit <- glm(onset_ko_flag ~ nbp_anydown_1 + 
+m1_logit <- glm(onset_ko_flag ~ expected_lag + 
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -397,7 +397,7 @@ stargazer(
 
 # HORIZONTAL INEQUALITY
 
-m13_logit <- glm(onset_ko_flag ~ HI + 
+m13_logit <- glm(onset_ko_flag ~ lag_HI + 
                    SpatialConc +
                    warhist +
                    peaceyears +
@@ -420,7 +420,7 @@ m13_summary_clustered <- coeftest(m13_logit, vcov = m13_vcov_cluster)
 print(m13_summary_clustered)
 
 
-m14_logit <- glm(onset_ko_terr_flag ~ HI + 
+m14_logit <- glm(onset_ko_terr_flag ~ lag_HI + 
                    SpatialConc +
                    warhist +
                    peaceyears +
@@ -443,7 +443,7 @@ m14_summary_clustered <- coeftest(m14_logit, vcov = m14_vcov_cluster)
 print(m14_summary_clustered)
 
 
-m15_logit <- glm(incidence_flag ~ HI + 
+m15_logit <- glm(incidence_flag ~ lag_HI + 
                    SpatialConc +
                    warhist +
                    peaceyears +
@@ -452,7 +452,8 @@ m15_logit <- glm(incidence_flag ~ HI +
                    nbp_groups_count +
                    groupsize + 
                    log(lag_pop) +
-                   log(lag_rgdpe)+                    ns(peaceyears, df = 3),
+                   log(lag_rgdpe)+
+                   ns(peaceyears, df = 3),
                  data = df_analysis_group,
                  family = binomial())
 
@@ -465,7 +466,7 @@ m15_summary_clustered <- coeftest(m15_logit, vcov = m14_vcov_cluster)
 print(m15_summary_clustered)
 
 
-m16_logit <- glm(incidence_terr_flag ~ HI + 
+m16_logit <- glm(incidence_terr_flag ~ lag_HI + 
                    SpatialConc +
                    warhist +
                    peaceyears +
