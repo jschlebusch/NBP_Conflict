@@ -120,7 +120,6 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_group)
 
->>>>>>> 0f2de603478375fd8091962756c4c2d762245473
 # Incorporate Region Codes for Regional Controls
 
 df_cc <- countrycode::codelist %>%
@@ -135,19 +134,18 @@ df_cc_NA <- df_cc %>%
 df_analysis_group <- df_analysis_group %>%
   left_join(df_cc, by = "iso3c")
 
-
 ## PAPER MODELS
 
 #ONSET: Educational Exclusion and Downgrades
 
-m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+m1_logit <- glm(onset_do_flag ~ lag_nbp_anydown_1 + 
                   nbp_educational_exclusion +
                   groupsize +
                   SpatialConc +
                   warhist +
                   tek_egip +
                   lag_Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
@@ -173,7 +171,7 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   lag_Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
@@ -190,8 +188,7 @@ print(m1_summary_clustered)
 
 # PUBLIC EXCLUSION
 
-m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
-                  nbp_public_exclusion +
+m1_logit <- glm(onset_ko_flag ~ nbp_public_exclusion +
                   epr_downgraded1 +
                   status_excl +
                   groupsize +
@@ -199,7 +196,7 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   lag_Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
@@ -216,7 +213,6 @@ print(m1_summary_clustered)
 
 # INCIDENCE
 
-
 m1_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
                   nbp_educational_exclusion +
                   epr_downgraded1 +
@@ -226,7 +222,7 @@ m1_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   lag_Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                   ns(peaceyears, df = 3),
@@ -242,7 +238,6 @@ m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 print(m1_summary_clustered)
 
 
-
 ###---- ANALYSIS ---------------------------------------------------------------
 
 # COMPARING POLITICAL AND EDUCATIONAL DOWNGRADES
@@ -255,7 +250,7 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   lag_Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   log(lag_pop) +
                   log(lag_rgdpe) +
                 ns(peaceyears, df = 3),
@@ -275,7 +270,7 @@ m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -298,7 +293,7 @@ m3_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -321,7 +316,7 @@ m3i_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 * epr_downgraded1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -353,7 +348,7 @@ m4_logit <- glm(incidence_flag ~ nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -375,7 +370,7 @@ m5_logit <- glm(incidence_flag ~ epr_downgraded1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -398,7 +393,7 @@ m6_logit <- glm(incidence_flag ~ nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -422,7 +417,7 @@ m7_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   peaceyears +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -444,7 +439,7 @@ m8_logit <- glm(onset_ko_terr_flag ~ epr_downgraded1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize +
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -467,7 +462,7 @@ m9_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 +
                   warhist +
                   tek_egip +
                   Polity2 +
-                  nbp_groups_count +
+                  excl_groups_count +
                   groupsize + 
                   log(lag_pop) +
                   log(lag_rgdpe) +
@@ -491,7 +486,7 @@ m10_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe) +
@@ -514,7 +509,7 @@ m11_logit <- glm(incidence_terr_flag ~ epr_downgraded1 +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -538,7 +533,7 @@ m12_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -575,7 +570,7 @@ m13_logit <- glm(onset_ko_flag ~ lag_HI +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -597,7 +592,7 @@ m14_logit <- glm(onset_ko_terr_flag ~ lag_HI +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize + 
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -620,7 +615,7 @@ m15_logit <- glm(incidence_flag ~ lag_HI +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize + 
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -642,7 +637,7 @@ m16_logit <- glm(incidence_terr_flag ~ lag_HI +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -665,7 +660,7 @@ m17_logit <- glm(SDM ~ nbp_anydown_1 +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -687,7 +682,7 @@ m18_logit <- glm(SDM ~ epr_downgraded1 +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -710,7 +705,7 @@ m19_logit <- glm(SDM ~ nbp_anydown_1 +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -738,7 +733,7 @@ m17_logit_alt <- glm(SDM ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize + 
                        log(lag_pop) +
                        log(lag_rgdpe)+
@@ -761,7 +756,7 @@ m18_logit_alt <- glm(SDM ~ epr_downgraded1 +
                        peaceyears +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize + 
                        log(lag_pop) +
                        log(lag_rgdpe)+
@@ -784,7 +779,7 @@ m19_logit_alt <- glm(SDM ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe)+
@@ -809,7 +804,7 @@ m17_logit_alt2 <- glm(SDM ~ nbp_anydown_1 +
                         warhist +
                         tek_egip +
                         Polity2 +
-                        nbp_groups_count +
+                        excl_groups_count +
                         groupsize +
                         log(lag_pop) +
                         log(lag_rgdpe)+
@@ -831,7 +826,7 @@ m18_logit_alt2 <- glm(SDM ~ epr_downgraded1 +
                         warhist +
                         tek_egip +
                         Polity2 +
-                        nbp_groups_count +
+                        excl_groups_count +
                         groupsize +
                         log(lag_pop) +
                         log(lag_rgdpe)+
@@ -854,7 +849,7 @@ m19_logit_alt2 <- glm(SDM ~ nbp_anydown_1 +
                         warhist +
                         tek_egip +
                         Polity2 +
-                        nbp_groups_count +
+                        excl_groups_count +
                         groupsize +
                         log(lag_pop) +
                         log(lag_rgdpe)+
@@ -879,7 +874,7 @@ m20_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -902,7 +897,7 @@ m21_logit <- glm(onset_ko_flag ~ nbp_public_exclusion +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -925,7 +920,7 @@ m22_logit <- glm(onset_ko_flag ~ status_excl +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -948,7 +943,7 @@ m23_logit <- glm(onset_ko_flag ~ nbp_educational_exclusion +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -973,7 +968,7 @@ m24_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -996,7 +991,7 @@ m25_logit <- glm(incidence_flag ~ nbp_public_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1019,7 +1014,7 @@ m26_logit <- glm(incidence_flag ~ status_excl +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1043,7 +1038,7 @@ m27_logit <- glm(incidence_flag ~ nbp_educational_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1068,7 +1063,7 @@ m28_logit <- glm(incidence_terr_flag ~ nbp_educational_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1091,7 +1086,7 @@ m29_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1114,7 +1109,7 @@ m30_logit <- glm(incidence_terr_flag ~ status_excl +
                    peaceyears +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1137,7 +1132,7 @@ m31_logit <- glm(incidence_terr_flag ~ nbp_public_exclusion +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1171,7 +1166,7 @@ m32_logit <- glm(onset_ko_flag ~ nbp_any_loi +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1194,7 +1189,7 @@ m33_logit <- glm(incidence_flag ~ nbp_any_loi +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1217,7 +1212,7 @@ m34_logit <- glm(incidence_terr_flag ~ nbp_any_loi +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1241,7 +1236,7 @@ m35_logit <- glm(onset_ko_flag ~ nbp_any_lc +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1264,7 +1259,7 @@ m36_logit <- glm(incidence_flag ~ nbp_any_lc +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1287,7 +1282,7 @@ m37_logit <- glm(incidence_terr_flag ~ nbp_any_lc +
                    warhist +
                    tek_egip +
                    Polity2 +
-                   nbp_groups_count +
+                   excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe)+
@@ -1314,7 +1309,7 @@ m1_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1331,7 +1326,7 @@ m2_fixed <- feglm(onset_ko_flag ~ epr_downgraded1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1349,7 +1344,7 @@ m3_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count + 
+                    excl_groups_count + 
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1366,7 +1361,7 @@ m4_fixed <- feglm(onset_ko_flag ~ HI +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1383,7 +1378,7 @@ m5_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1400,7 +1395,7 @@ m6_fixed <- feglm(incidence_flag ~ epr_downgraded1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1418,7 +1413,7 @@ m7_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1435,7 +1430,7 @@ m8_fixed <- feglm(incidence_flag ~ HI +
                     warhist +
                     tek_egip +
                     Polity2 +
-                    nbp_groups_count +
+                    excl_groups_count +
                     groupsize +
                     log(lag_pop) +
                     log(lag_rgdpe) +
@@ -1453,7 +1448,7 @@ m1_2w_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1470,7 +1465,7 @@ m2_2w_fixed <- feglm(onset_ko_flag ~ epr_downgraded1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1488,7 +1483,7 @@ m3_2w_fixed <- feglm(onset_ko_flag ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1505,7 +1500,7 @@ m4_2w_fixed <- feglm(onset_ko_flag ~ HI +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1522,7 +1517,7 @@ m5_2w_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1539,7 +1534,7 @@ m6_2w_fixed <- feglm(incidence_flag ~ epr_downgraded1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1557,7 +1552,7 @@ m7_2w_fixed <- feglm(incidence_flag ~ nbp_anydown_1 +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1574,7 +1569,7 @@ m8_2w_fixed <- feglm(incidence_flag ~ HI +
                        warhist +
                        tek_egip +
                        Polity2 +
-                       nbp_groups_count +
+                       excl_groups_count +
                        groupsize +
                        log(lag_pop) +
                        log(lag_rgdpe) +
@@ -1593,7 +1588,7 @@ m1_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       warhist +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -1615,7 +1610,7 @@ m2_logit_lag <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                       warhist +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1638,7 +1633,7 @@ m3_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       warhist +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1663,7 +1658,7 @@ m4_logit_lag <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1687,7 +1682,7 @@ m5_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1711,7 +1706,7 @@ m6_logit_lag <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize + 
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1735,7 +1730,7 @@ m7_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1760,7 +1755,7 @@ m8_logit_lag <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       lag_groupsize +
                       log(lag_pop) +
                       log(lag_rgdpe)+
@@ -1789,7 +1784,7 @@ m1_intensity <- glm(intensity_level ~ nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe),
                     data = df_analysis_conflicts,
@@ -1812,7 +1807,7 @@ m2_intensity <- glm(intensity_level ~ HI +
                       peaceyears +
                       tek_egip +
                       Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -1836,7 +1831,7 @@ m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -1860,7 +1855,7 @@ m4_intensity <- glm(intensity_level ~ lag_HI +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -1885,7 +1880,7 @@ m5_intensity <- glm(intensity_level ~ Monolingual +
                       peaceyears +
                       tek_egip +
                       Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe) +
                       ns(peaceyears, df = 3),
@@ -1909,7 +1904,7 @@ m6_intensity <- glm(intensity_level ~ lag_Monolingual +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      nbp_groups_count +
+                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
