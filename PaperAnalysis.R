@@ -71,8 +71,6 @@ df_analysis_group <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
   mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
 
-
-
 # Incorporate Region Codes for Regional Controls
 
 df_cc <- countrycode::codelist %>%
@@ -89,6 +87,8 @@ df_analysis_group <- df_analysis_group %>%
 
 
 ## PAPER MODELS
+
+#ONSET: Educational Exclusion and Downgrades
 
 m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
                   nbp_educational_exclusion +

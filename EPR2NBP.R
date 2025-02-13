@@ -7,24 +7,19 @@
 ###-----------------------------------------------------------------------------
 
 ##---- Packages ----------------------------------------------------------------
+
 library(tidyverse)
 library(haven)
 library(writexl)
 
 ##---- Data --------------------------------------------------------------------
-#read the data
-
-#df_NBP <- read_dta("NBP_groups_final.dta")%>%
-#  mutate(across(contains("EPRID"), as.factor))
 
 df_NBP <- read_dta("NBP_2025.dta")
 df_EPR <- read.csv("EPRConflict.csv") %>%
   mutate(gwgroupid = as.factor(gwgroupid)) %>%
   rename(Year = year)
 
-#Bit of EDA - Just having a look at the NBP data and the EPR ID variable
-#you can probably simple ignore everything up to line 91
-#---- NBP ---------------------------------------------------------------------
+#---- Exploring NBP ------------------------------------------------------------
  
 str(df_NBP)
 summary(df_NBP)
@@ -40,11 +35,13 @@ df_NBP %>%
   group_by(GpInEPR) %>%
   summarise(UniqueGroups = n_distinct(Group), .groups = "drop")
 
-#check how many groups and unique EPR IDs we actually have
+# The number of unique groups and EPRIDs in NBP
+
 print(length(unique(df_NBP$Group)))
 print(length(unique(df_NBP$EPRIDgroup)))
 
-#groups in more than one country
+# Groups that are in more than one country
+
 list_tb_groups <- df_NBP %>%
   group_by(Group) %>%
   summarise(NumCountries = n_distinct(Country), .groups = "drop") %>%
@@ -53,7 +50,8 @@ list_tb_groups <- df_NBP %>%
 
 print(list_tb_groups)
 
-#no. of countries and EPR IDs per group
+# Number of countries and EPRIDs per group
+
 df_numceprid <- df_NBP %>%
   group_by(Group) %>%
   summarise(NumCountries = n_distinct(Country), 
@@ -63,13 +61,15 @@ df_numceprid <- df_NBP %>%
 
 summary(df_numceprid)
 
-#check for logical error: more EPRID that countries
+# Check for logical errors: more EPRIDs than countries
+
 df_check <- df_numceprid %>%
   filter(UniqueEPRIDgroups > NumCountries)
 
 summary(df_check)
 
-#and subgroups with unique EPR ID
+# Subgroups with unique EPR ID
+
 df_subgroups <- df_NBP %>%
   select(starts_with("EPRIDsubgroup"))
 
@@ -92,16 +92,19 @@ print(length(unique(df_EPR$groupname)))
 
 #---- MERGING ------------------------------------------------------------------
 
-#DISCUSSED APPROACH:
-#merge on group's EPR ID where available, 
-#merge on subgroup ID where no group ID available
-#step-wise for transparency
-#and incl. variable indicating merge level so we can later filter them out or adjust e.g. groupsize accordingly
+# THE MERGING APPROACH ADOPTED:
 
-# create variable that records whether I merge on group or subgroup, start value NA
+# Step 1: Merge on the group's EPRID where available;
+# Step 2: Merge on EPRIDsubgroup (if available) where no EPRID is available;
+# Step-wise for transparency + clarity;
+# Step 3: Add a variable for merge level to enable filtering or adjusting (e.g., group size) later.
+
+# Create variable that records whether I merge on group or subgroup, start value NA
+
 df_NBP$EPRMergeLevel <- NA
 
-# simply merge on EPRID - works for groups that have one
+# Merge on EPRID - for groups that have this identifier
+
 df_groupmerge <- merge(
   df_NBP,
   df_EPR,
@@ -110,20 +113,24 @@ df_groupmerge <- merge(
   all.x = TRUE
 )
 
-# indicate that where EPR ID is not NA, I merged on group level (EPRIDgroup)
+# Indicate that when EPR ID is not NA, the merge was at the group level (EPRIDgroup)
+
 df_groupmerge$EPRMergeLevel <- ifelse(!is.na(df_groupmerge$EPRIDgroup), "group", df_groupmerge$EPRMergeLevel)
 
 summary(as.factor(df_groupmerge$EPRMergeLevel))
 
-# take all groups that DO NOT have an EPR ID at the group level - either because there is none or because there is only one for a subgroup
+# Select groups without an EPR ID at the group level—either absent or limited to a subgroup
+
 df_unmatched <- subset(df_NBP, is.na(EPRIDgroup))
 
-# have a look at the subgroups 
+# Check the SubGroups and Unique EPRIDsubgroup
+
 print(length(unique(df_unmatched$EPRIDsubgroup1)))
 print(length(unique(df_unmatched$EPRIDsubgroup2)))
 print(length(unique(df_unmatched$EPRIDsubgroup3)))
 
-# merge on EPR ID of subgroup 1 - recall: only for groups that do not have an ID at the group level (There are some where e.g., EPRIDgroup == EPRIDsubgroup1 [maybe that's to be looked into] so that would otherwise be an issue)
+# Merge on EPRID of subgroup 1, but only for groups without a group-level ID. Note: Some cases where EPRIDgroup == EPRIDsubgroup1 may require further review
+
 df_merge_subgroup1 <- merge(
   df_unmatched,
   df_EPR,
@@ -132,12 +139,14 @@ df_merge_subgroup1 <- merge(
   all.x = TRUE
 )
 
-# report that ERPMergeLevel is subgroup1
+# Set ERPMergeLevel to subgroup1
+
 df_merge_subgroup1$EPRMergeLevel <- ifelse(!is.na(df_merge_subgroup1$EPRIDsubgroup1), "subgroup1", df_merge_subgroup1$EPRMergeLevel)
 
 summary(as.factor(df_merge_subgroup1$EPRMergeLevel))
 
-# and the same for subgroup2 - where NO EPR ID is available at the group level, I merge on subgroup2
+# Merge on Subgroup2: For groups without a group-level EPR ID, merge on subgroup2.
+
 df_merge_subgroup2 <- merge(
   df_unmatched,
   df_EPR,
@@ -146,12 +155,14 @@ df_merge_subgroup2 <- merge(
   all.x = TRUE
 )
 
-# as above
+# Set ERPMergeLevel to subgroup2
+
 df_merge_subgroup2$EPRMergeLevel <- ifelse(!is.na(df_merge_subgroup2$EPRIDsubgroup2), "subgroup2", df_merge_subgroup2$EPRMergeLevel)
 
 summary(as.factor(df_merge_subgroup2$EPRMergeLevel))
 
-# ... and for subgroup3
+# Merge on Subgroup3: For groups without a group-level EPRID, merge on subgroup3
+
 df_merge_subgroup3 <- merge(
   df_unmatched,
   df_EPR,
@@ -160,11 +171,14 @@ df_merge_subgroup3 <- merge(
   all.x = TRUE
 )
 
+# Set EPRMergeLevel to subgroup3
+
 df_merge_subgroup3$EPRMergeLevel <- ifelse(!is.na(df_merge_subgroup3$EPRIDsubgroup3), "subgroup3", df_merge_subgroup3$EPRMergeLevel)
 
 summary(as.factor(df_merge_subgroup3$EPRMergeLevel))
 
-# put it all together, always taking the merged groups from each step, and adding the groups that were not merged after merging on subgroup 3 in the end
+# Combine all merged groups step by step, adding unmerged groups after the subgroup3 merge.
+
 df_merge_subgroup1 <- df_merge_subgroup1 %>%
   mutate(EPRMergeLevel = as.character(EPRMergeLevel))
 
@@ -213,7 +227,8 @@ df_EPR2NBP <- bind_rows(
   subset(df_merge_subgroup3, is.na(EPRMergeLevel))     
 )
 
-# check final dataset - with subgroup as smallest u.o.a. now obviously now slightly more than in original NBP, but EPRMergeLevel variable allows to kick them out where we don't want them
+# Check the final dataset—now with subgroups as the smallest unit. The count is slightly higher than in the original NBP, but EPRMergeLevel allows filtering as needed
+
 nrow(df_EPR2NBP)
 nrow(distinct(df_EPR2NBP))
 
@@ -226,6 +241,8 @@ df_EPR2NBP <- df_EPR2NBP %>%
 summary(df_EPR2NBP)
 
 summary(df_EPR2NBP$EPRMergeLevel)
+
+# Write the Matched Data in New Formats
 
 write.csv(df_EPR2NBP, "EPR2NBP_2025-csv.csv")
 #write_dta(df_EPR2NBP, "EPR2NBP.dta")
