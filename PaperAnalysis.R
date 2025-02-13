@@ -86,11 +86,10 @@ df_analysis_group <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
   mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
 
-<<<<<<< HEAD
-=======
-# additional lagges variables (rev. NBP_Conflict)
+# Additional lagged variables (revised `NBP_Conflict`).
+  
+# Lagged Variables
 
-# lagged variables
 lag_vars <- c("nbp_anydown_2",
               "nbp_educational_exclusion",
               "nbp_public_exclusion",

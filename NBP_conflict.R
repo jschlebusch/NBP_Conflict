@@ -946,6 +946,8 @@ print(ct_sdmonset_upgrade)
 chisq_test_up <- chisq.test(ct_sdmonset_upgrade)
 print(chisq_test_up)
 
+## There is an issue in this line of code starting at 951
+
 mosaic(ct_sdmonset_upgrade,
        shade = TRUE,       
        legend = TRUE,      
@@ -984,6 +986,8 @@ df_lagged_2 <- df_complete_sdmend %>%
 
 ct_sdmend_upgrade <- table(df_lagged_2$nbp_anyupgrade_1, df_lagged_2$SDM_end)
 print(ct_sdmend_upgrade)
+
+# Issue here as well below starting in 992
 
 fisher.test(ct_sdmend_upgrade) 
 
