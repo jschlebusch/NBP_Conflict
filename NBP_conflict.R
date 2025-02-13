@@ -7,6 +7,7 @@
 ###-----------------------------------------------------------------------------
 
 ###---- Packages ----------------------------------------------------------------
+
 library(tidyverse)
 library(haven)
 library(readxl)
@@ -26,8 +27,6 @@ library(stargazer)
 
 ###---- Data --------------------------------------------------------------------
 
-#df_complete <- read_dta("EPR2NBP_Emre2.dta")%>%
-
 df_complete <- read.csv("EPR2NBP_2025-csv.csv")%>%
   mutate(across(starts_with(c("anydown", "anyupgrade")), as.factor)) %>%
   rename_with(~ paste0("nbp_",.), starts_with(c("anydown", "anyupgrade"))) %>%
@@ -37,37 +36,7 @@ df_complete <- read.csv("EPR2NBP_2025-csv.csv")%>%
   mutate(RacialGpPast = ifelse(RacialGpPast == 99, NA, RacialGpPast)) %>%
   distinct()
 
-# issue fix - can be added above; separate below for transparency
-# A. re. coding of political migrant and labour migrant variables, cf. email 29 Dec 2024
-
-summary(as.factor(df_complete$ArrivedPoliticalMigrantsRefugees))
-summary(as.factor(df_complete$ArrivedLabourMigrants))
-
-df_complete <- df_complete %>%
-  mutate(
-    ArrivedPoliticalMigrantsRefugees = case_when(
-      is.na(ArrivedPoliticalMigrantsRefugees) ~ 0,
-      TRUE ~ ArrivedPoliticalMigrantsRefugees),
-    ArrivedLabourMigrants = case_when(
-      is.na(ArrivedLabourMigrants) ~ 0,
-      TRUE ~ ArrivedLabourMigrants
-    ))%>%
-  mutate(
-    across(
-      c(ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, RacialGpStudyPeriod, RacialGpPast, IndigGp, SpatialConc),
-      as.factor))
-
-summary(as.factor(df_complete$ArrivedPoliticalMigrantsRefugees))
-summary(as.factor(df_complete$ArrivedLabourMigrants))
-
-summary(as.factor(df_complete$SDM))
-
-df_complete <- df_complete %>%
-  mutate(SDM = na_if(SDM, 99))
-
-summary(as.factor(df_complete$SDM))
-
-# B. re. exclusion of first year of upgrade / downgrade variable
+# Examine the upgrade / downgrade variable
 
 summary(df_complete$nbp_anydown_1)
 summary(df_complete$nbp_anydown_5)
@@ -81,31 +50,17 @@ df_complete <- df_complete %>%
   mutate(across(starts_with("nbp_"), ~ as.numeric(as.character(.x))
   ))
 
-# use one country to manually check the changes (can be ignored)
+# Manually check changes for one country to verify first year of country-group isn't counted as a downgrade (optional); I revised the first year rule in the original upgrade/downgrade code
 
 df_cambodia <- df_complete %>%
   filter(Country == "Cambodia") %>%
   select(c(Country, Year, CountryDateStart, CountryDateEnd, Group, starts_with("nbp_")))
 view(df_cambodia)
 
-df_complete <- df_complete %>%
-  group_by(Country) %>%
-  mutate(across(starts_with("nbp_"), ~if_else(Year == min (Year), NA_real_, .x))) %>%
-  ungroup()
-
-df_complete <- df_complete %>%
-  mutate(across(starts_with("nbp_"), as.factor))
-
-summary(df_complete$nbp_anydown_1)
-summary(df_complete$nbp_anydown_5)
-summary(df_complete$nbp_anydown_10)
-
-summary(df_complete$nbp_anyupgrade_1)
-summary(df_complete$nbp_anyupgrade_5)
-summary(df_complete$nbp_anyupgrade_10)
-
-# regional markers:
-# there's a package {countrycode} which provides assignment of countries to regions - there might be a handful of cases where this does not work that easily (e.g., Yugoslavia, GDR) but for EDA purposes, it should be fine. Happy to come back to this and manually revise these if there are analyses to be run that rely on the 'region' variable.
+# Regional markers:
+# Use the {countrycode} package to assign countries to regions. 
+# Some cases (e.g., Yugoslavia, GDR) may require manual adjustment, but it should suffice for EDA.
+# Can revisit and refine if analyses depend on the 'region' variable.
 
 df_cc <- countrycode::codelist %>%
   select(c(country.name.en, iso3c, un.region.name, un.regionintermediate.name, un.regionsub.name))
@@ -126,7 +81,8 @@ df_complete_NA <- df_complete %>%
 summary(as.factor(df_complete$un.region.name))
 summary(as.factor(df_complete$un.regionsub.name))
 
-# add un.region, and un.subregion manually (not in {countrycode}) for Czechoslovakia, GDR, Kosovo, People's Democratic Republic of Yemen, South Vietnam, Taiwan, USSR, Yemen, and Yugoslavia
+# Manually add UN region and subregion for cases not covered by {countrycode}:
+# Czechoslovakia, GDR, Kosovo, People's Democratic Republic of Yemen, South Vietnam, Taiwan, USSR, Yemen, and Yugoslavia.
 
 df_complete <- df_complete %>%
   mutate(
@@ -159,8 +115,8 @@ df_complete <- df_complete %>%
 summary(as.factor(df_complete$un.region.name))
 summary(as.factor(df_complete$un.regionsub.name))
 
-# read additional data
-# BOP State History Data re. Monolingual Educatio Var. 
+# Read additional data:
+# BOP State History Data on Monolingual Education Variable.
 
 df_bop_state <- read_excel("Bop_extended_state_history.xlsx", sheet = 2, skip = 1) %>%
   select(c(wbcode, wbname, statehiste00)) %>%
@@ -191,20 +147,19 @@ df_polity5 <- df_polity5%>%
 df_polity5 <- df_polity5 %>%
   select(c(iso3c, Year, Polity2))
 
-# EPR GrowUp data
-
-#df_TEK <- read.csv("TEK-2021.csv")
+# EPR GrowUp Data
 
 df_epr_gu <- read.csv("epr_growup_data.csv")
 
-# GDP and Population data from Penn World Table
+# Penn World Table: GDP and Population DATA
 
 df_pwt <- read_excel("pwt1001.xlsx", sheet = 3) %>%
   select(c(countrycode, year, pop, rgdpe, rgdpo, rgdpna)) %>%
   rename(iso3c = countrycode,
          Year = year)
 
-# conflict dyads
+# Conflict Dyad Data
+
 df_ethnicdyads <- openxlsx::read.xlsx("dyads_intensity_groups.xlsx") %>%
   filter(!is.na(group))
 
@@ -214,7 +169,8 @@ df_ethnicdyads <- openxlsx::read.xlsx("dyads_intensity_groups.xlsx") %>%
 
 summary(df_complete)
 
-#NBP changes
+#NBP Educational Status Changes: Upgrades and Downgrades
+
 summary(df_complete$nbp_anydown_1)
 str(df_complete$nbp_anydown_1)
 class(df_complete$nbp_anydown_1)
@@ -239,7 +195,8 @@ summary(df_complete$nbp_anyupgrade_10)
 str(df_complete$nbp_anyupgrade_10)
 class(df_complete$nbp_anyupgrade_10)
 
-#EPR changes
+#EPR Political Status Changes: Upgrades and Downgrades
+
 summary(df_complete$epr_downgraded1)
 str(df_complete$epr_downgraded1)
 class(df_complete$epr_downgraded1)
@@ -264,9 +221,10 @@ summary(df_complete$epr_upgraded10)
 str(df_complete$epr_upgraded10)
 class(df_complete$epr_upgraded10)
 
-#---- Compare NBP upgrade / downgrade with EPR upgrade downgrade ---------------
+#---- Compare NBP upgrade / downgrade with EPR upgrade / downgrade ---------------
 
-# association
+# Contingency Tables
+
 contingency_table_1y_down <- table(df_complete$nbp_anydown_1, df_complete$epr_downgraded1)
 print(contingency_table_1y_down)
 contingency_table_5y_down <- table(df_complete$nbp_anydown_5, df_complete$epr_downgraded5)
@@ -281,7 +239,8 @@ print(contingency_table_5y_up)
 contingency_table_10y_up <- table(df_complete$nbp_anyupgrade_10, df_complete$epr_upgraded10)
 print(contingency_table_10y_up)
 
-# Phi coefficient 
+# Phi coefficient
+
 contingency_tables <- list(
   table_1y_down = contingency_table_1y_down,
   table_5y_down = contingency_table_5y_down,
@@ -302,18 +261,18 @@ for (table_name in names(phi_coeffs)) {
   print(paste("Phi coef. for", table_name, ":", round(phi_coeffs[[table_name]], 3)))
 }
 
-# there isn't really a noteworthy association but we can still proceed to make some visualisations
+# No strong association observed, but proceeding with visualizations.
 
-#---- visualisations -----------------------------------------------------------
+# ---- Visualizations -----------------------------------------------------------
 
-# Visualising the Association (Difference) between EPR and NBP upgrade / downgrade
+# Visualizing the association (difference) between EPR and NBP upgrades/downgrades.
 
-# the code is pretty repetitive - many lines but quite a bit of copy and paste. 
-# I did it step-wise for transparency reasons; perhaps skip to the outputs and check code only where necessary
+# The code is repetitive—many lines with copy-paste structure.
+# Steps are kept transparent; consider skipping to outputs and checking code only if needed.
 
 # DOWNGRADES
 
-# Heat map of counts
+# Heatmap of counts.
 
 heatmap_data_5y_down <- melt(contingency_table_5y_down)
 
@@ -326,6 +285,7 @@ ggplot(heatmap_data_5y_down, aes(Var1, Var2, fill = value)) +
 ggsave("hm1_down_5y.png", width = 8, height = 6, dpi = 300)
 
 # Bar charts
+
 df_complete$combination_5y_down <- with(df_complete, paste(nbp_anydown_5, epr_downgraded5, sep = "-"))
 joint_freq <- as.data.frame(table(df_complete$combination_5y_down))
 
@@ -555,8 +515,9 @@ ggplot(df_hist_4, aes(x = Year)) +
 
 ggsave("l2_down_byregion_1y.png", width = 8, height = 6, dpi = 300)
 
-# re. overrepresentation of regions: upgrade and downgrade are coded at the group level - the count is therefore sensitive to changes in countries with a high number of groups, in particular where a policy affects many groups
-# likely: China and the USSR causing the high number values in Europe and Asia
+# Regarding regional overrepresentation:
+# Upgrades and downgrades are coded at the group level, making counts sensitive to countries with many groups.
+# Policies affecting multiple groups can inflate counts, likely driven by China and the USSR in Europe and Asia.
 
 # let's have a look at the USSR
 df_ussr <- df_complete %>%
@@ -1138,13 +1099,16 @@ ggplot(df_complete) +
 
 ggsave("mosaic2_anydown2incidence.png", width = 8, height = 6, dpi = 300)
 
-###---- MONOLINGUAL VARIABLE ---------------------------------------------------
+### ---- MONOLINGUAL VARIABLE ---------------------------------------------------
 
 ## ---- VARIABLE CONSTRUCTION --------------------------------------------------
-# issue with mapping in the "Monolingual" script - new approach
-# re. dual counting of languages: as per Mail 16 Dec 2024: Where law dictates one language and this corresponds to multiple languages in practice, only report one
 
-# create subset with relevant variables
+# Issue with mapping in the "Monolingual" script—using a new approach.
+# Regarding dual counting of languages (per 16 Dec 2024 email): 
+# When the law mandates one language but multiple are used in practice, report only one.
+
+# Create subset with relevant variables.
+
 df_languages <- df_complete %>%
   select(c(Year, Country, iso3c, Group, 
            starts_with("SubGroup"),
@@ -1172,91 +1136,13 @@ df_language_identification <- df_languages %>%
 
 view(df_language_identification)
 
-# create dummies that records whether, in a given country year, only 1 national language was used as LOI 
-# SOFT monolingual variable: LCs not accounted for
-# adjusted Monolingual Education script - variables added and mapping revised
-# previous approach commented kept but commented out below; note: here now reliance on LOIPrimary, and no. of LOIs per country not available
+# Create dummies indicating whether only one national language was used as LOI in a given country-year.
 
+# SOFT monolingual variable: Does not account for LCs.
+# Adjusted Monolingual Education script—added variables and revised mapping.
 
-# old code - revised below
-
-# df_languages_long <- df_languages %>%
-#   pivot_longer(
-#     cols = c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang, AddiLang,
-#              AddiLangCountry1, AddiLangCountry2, AddiLangCountry3, AddiLangCountry4),
-#     names_to = "LangVariable",
-#     values_to = "Language"
-#   ) %>%
-#   pivot_longer(
-#     cols = c(LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryStArabic, LOIPrimaryOtherLang, LOIPrimaryAddiLang,
-#              AddiLOI1, AddiLOI2, AddiLOI3, AddiLOI4),
-#     names_to = "LOIVariable",
-#     values_to = "LOIScore"
-#   ) %>%
-#   #filter(
-#   #  substr(LangVariable, 5, 5) == substr(LOIVariable, 11, 11) |
-#   #    LangVariable %in% c("StandardArabicLang", "OtherSpokenLang", "AddiLang") |  
-#   #    substr(LangVariable, 16, 16) == substr(LOIVariable, 8, 8)) %>%
-#   #filter(!is.na(Language) & !is.na(LOIScore)) %>%
-#   mutate(Language = case_when(
-#     Language == "Northern Pashto" ~ "Pashto",
-#     Language == "Southern Pashto" ~ "Pashto",
-#     Language == "Standard Arabic" ~ "Arabic",
-#     Language %in% c("German", "German, Standard", "German Standard", "Bavarian") ~ "German",
-#     Language %in% c("Kurdish, Northern", "Kurdish, Southern", "Kurdish, Central") ~ "Kurdish",
-#     str_detect(Language, "alagasy") ~ "Malagasy",
-#     TRUE ~ Language  
-#   ))
-
-##---- debugging ---- empty cells introduced in df_languages_long ----
-
-# intermediate1 <- df_languages %>%
-#   pivot_longer(
-#     cols = c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang, AddiLang,
-#              AddiLangCountry1, AddiLangCountry2, AddiLangCountry3, AddiLangCountry4),
-#     names_to = "LangVariable",
-#     values_to = "Language"
-#   )
-# 
-# intermediate2 <- intermediate1 %>%
-#   pivot_longer(
-#     cols = c(LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryStArabic, LOIPrimaryOtherLang, LOIPrimaryAddiLang,
-#              AddiLOI1, AddiLOI2, AddiLOI3, AddiLOI4),
-#     names_to = "LOIVariable",
-#     values_to = "LOIScore"
-#   )
-
-# The issue is in the pairing logic
-
-# old code below, clean version starting l. 1097 --- PROBLEM: substr. to match on character position, below step wise
-
-# df_languages_long <- df_languages %>%
-#   pivot_longer(
-#     cols = c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang, AddiLang,
-#              AddiLangCountry1, AddiLangCountry2, AddiLangCountry3, AddiLangCountry4),
-#     names_to = "LangVariable",
-#     values_to = "Language"
-#   ) %>%
-#   pivot_longer(
-#     cols = c(LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryStArabic, LOIPrimaryOtherLang, LOIPrimaryAddiLang,
-#              AddiLOI1, AddiLOI2, AddiLOI3, AddiLOI4),
-#     names_to = "LOIVariable",
-#     values_to = "LOIScore"
-#   ) %>%
-#   mutate(Match = substr(LangVariable, 5, 5) == substr(LOIVariable, 11, 11) |
-#            LangVariable %in% c("StandardArabicLang", "OtherSpokenLang", "AddiLang") |
-#            substr(LangVariable, 16, 16) == substr(LOIVariable, 8, 8)) %>%
-#   filter(Match & !is.na(Language) & !is.na(LOIScore)& Language != "") %>%
-#   select(-Match) %>%
-#   mutate(Language = case_when(
-#     Language == "Northern Pashto" ~ "Pashto",
-#     Language == "Southern Pashto" ~ "Pashto",
-#     Language == "Standard Arabic" ~ "Arabic",
-#     Language %in% c("German", "German, Standard", "German Standard", "Bavarian") ~ "German",
-#     Language %in% c("Kurdish, Northern", "Kurdish, Southern", "Kurdish, Central") ~ "Kurdish",
-#     str_detect(Language, "alagasy") ~ "Malagasy",
-#     TRUE ~ Language  
-#   )) 
+# Previous approach retained but commented out.
+# Note: Now based on LOIPrimary; total number of LOIs per country is not available.
 
 # Below, I just look at two countries to see changes at each step - can be ignored
 
@@ -1451,6 +1337,7 @@ chisq.test(monoled_conflict_table_lag)
 fisher.test(monoled_conflict_table_lag)
 
 # ALTERNATIVE SPECIFICATION: STRICTER VERSION OF MONOLINGUAL VARIABLE
+# MONOLINGUAL STRICT: 1 national LOI, NO regional LOIs, NO LCs
 
 monoled_conflict_table_strict <- table(df_complete$MonolingualStrict, df_complete$any_onset)
 print(monoled_conflict_table_strict)
@@ -1511,7 +1398,7 @@ ggplot(df_complete, aes(x = factor(MonolingualStrict), y = Polity2)) +
   labs(x = "Monolingual Strict", y = "Polity2") +
   theme_clean()
 
-# state history
+# STATE HISTORY MERGE
 
 df_complete <- df_complete %>%
   left_join(df_bop_state, by = "iso3c")
@@ -1527,70 +1414,75 @@ wilcox.test(statehiste00 ~ Monolingual, data = df_complete)
 
 ###---- EDUCATIONAL INEQUALITY -------------------------------------------------
 
-##---- HI Variable
+##---- Horizontal Inequality Variable ------------------------------------------
 
 df_HI_score <- df_complete %>%
-  select(iso3c, Group, Year, Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang, 
-         LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryStArabic, LOIPrimaryOtherLang,
-         LOISecondary1, LOISecondary2, LOISecondary3, LOISecondaryStArabic, LOISecondaryOtherLang,
-         LCPrimary1, LCPrimary2, LCPrimary3, LCPrimaryStArabic, LCPrimaryOtherLang,
-         LCSecondary1, LCSecondary2, LCSecondary3, LCSecondaryStArabic, LCSecondaryOtherLang)
+  select(iso3c, Group, Year, Lang1, Lang2, Lang3, StandardArabicLang, AddiLang, 
+         LOIPrimary1, LOIPrimary2, LOIPrimary3, LOIPrimaryStArabic, LOIPrimaryAddiLang,
+         LOISecondary1, LOISecondary2, LOISecondary3, LOISecondaryStArabic, LOISecondaryAddiLang,
+         LCPrimary1, LCPrimary2, LCPrimary3, LCPrimaryStArabic, LCPrimaryAddiLang,
+         LCSecondary1, LCSecondary2, LCSecondary3, LCSecondaryStArabic, LCSecondaryAddiLang)
 
 summary(df_HI_score)
 
 loi_cols <- c("LOIPrimary1", "LOIPrimary2", "LOIPrimary3", 
-              "LOIPrimaryStArabic", "LOIPrimaryOtherLang",
+              "LOIPrimaryStArabic", "LOIPrimaryAddiLang",
               "LOISecondary1", "LOISecondary2", "LOISecondary3", 
-              "LOISecondaryStArabic", "LOISecondaryOtherLang")
+              "LOISecondaryStArabic", "LOISecondaryAddiLang")
 
 lc_cols <- c("LCPrimary1", "LCPrimary2", "LCPrimary3", 
-             "LCPrimaryStArabic", "LCPrimaryOtherLang",
+             "LCPrimaryStArabic", "LCPrimaryAddiLang",
              "LCSecondary1", "LCSecondary2", "LCSecondary3", 
-             "LCSecondaryStArabic", "LCSecondaryOtherLang")
+             "LCSecondaryStArabic", "LCSecondaryAddiLang")
 
 df_HI_score <- df_HI_score %>%
-  mutate(across(all_of(c(loi_cols, lc_cols)), 
-                ~if_else(.x %in% c(99, 100), NA_real_, .x))) # does NA makes sense here or should we treat this as 0?
+  mutate(across(all_of(c(loi_cols, lc_cols)), ~ if_else(.x %in% c(99, 100), 0, .x))) # Treating 99 and 100 as 0
 
 summary(df_HI_score)
 
-# Swap 1 and 2: 2 as national and 1 as local / 2 as mandatory and 1 as optional
+# Swap 1 and 2:
+# - 2 as national, 1 as local
+# - 2 as mandatory, 1 as optional
+
 swap_values <- function(x) ifelse(x == 1, 2, ifelse(x == 2, 1, x))
 
 df_HI_score <- df_HI_score %>%
   mutate(across(all_of(c(loi_cols, lc_cols)), swap_values))
 
-# scores - pretty much copied from HI script with minor adjustments; I dont think we need *100 if we just take absolute values
 # [copied code now under OLD CODE FRACMENTS below]
 # unclarity in HI script: why *2? is that to attach weights? then, perhaps only for LOI?
 # the values dont seem to add up, that's why commented out. Suggestion for an easier version: group-level Education score = 2(sum of LOI scores) + (sum of LC scores) / number of languages --- in the HI script, there seems to have been only the LOI sum used. We'd then not use the LC data - so let's work with weighting instead?
 
 df_HI_score <- df_HI_score %>%
-  mutate(across(c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang), ~ na_if(.x, "")))
+  mutate(across(c(Lang1, Lang2, Lang3, StandardArabicLang, AddiLang), ~ na_if(.x, "")))
 
-# number of languages associated with the groups
+# Creating a variable for the total number of languages associated with each group
+
 df_HI_score <- df_HI_score %>%
   rowwise() %>%
   mutate(
-    num_languages = length(na.omit(c_across(c(Lang1, Lang2, Lang3, StandardArabicLang, OtherSpokenLang))))) %>%
+    num_languages = length(na.omit(c_across(c(Lang1, Lang2, Lang3, StandardArabicLang, AddiLang))))) %>%
   ungroup()
 
 summary(df_HI_score$num_languages)
 
 # LOI educational score as sum
+
 df_HI_score <- df_HI_score %>%
   rowwise() %>%
-  mutate(LOIsum = sum(c_across(starts_with("LOI")), na.rm = TRUE) * 2) %>% # if you don't want to weight LOI double against LC, we can just remove it here
+  mutate(LOIsum = sum(c_across(starts_with("LOI")), na.rm = TRUE) * 2) %>%
   ungroup()
 
 # adjusted by group size
+
 df_HI_score <- df_HI_score %>%
   mutate(LOIsum_adj = LOIsum / num_languages)
 
 summary(df_HI_score$LOIsum)
 summary(df_HI_score$LOIsum_adj)
 
-# LC educational scores
+# LC Educational Scores
+
 df_HI_score <- df_HI_score %>%
   rowwise() %>%
   mutate(LCsum = sum(c_across(starts_with("LC")), na.rm = TRUE)) %>%
@@ -1602,29 +1494,30 @@ df_HI_score <- df_HI_score %>%
 summary(df_HI_score$LCsum)
 summary(df_HI_score$LCsum_adj)
 
-# group-level edu score as sum of LOI and LC
+# Group-level education score: Sum of LOI and LC
 
 df_HI_score <- df_HI_score %>%
   mutate(group_edu_score = LOIsum_adj + LCsum_adj)
 
 summary(df_HI_score$group_edu_score)
 
-# country-level score
+# Country-Level Score
+
 df_HI_score <- df_HI_score %>%
   group_by(iso3c, Year) %>%
-  mutate(country_edu_score = sum(group_edu_score)) %>%
+  mutate(country_edu_score = mean(group_edu_score, na.rm = TRUE)) %>%
   ungroup()
 
 summary(df_HI_score$country_edu_score)
 
-# and the HI index as |g- -G)
+# HI index calculated as |ḡ - G|
 
 df_HI_score <- df_HI_score %>%
   mutate(HI = abs(group_edu_score - (country_edu_score - group_edu_score)))
 
 summary(df_HI_score$HI)
 
-hist(df_HI_score$HI) #maybe we have to do some transformation because of the distribution of the variable; let's see later
+hist(df_HI_score$HI)
 hist(log(df_HI_score$HI))
 
 # to main dataset
@@ -1705,9 +1598,9 @@ df_complete <- df_complete %>%
 summary(as.factor(df_complete$nbp_any_lc))
 
 
-###---- CONTROL VARIABLES ------------------------------------------------------
+### ---- CONTROL VARIABLES ------------------------------------------------------
 
-##---- no. of nbp groups
+## ---- Number of NBP groups
 
 df_complete <- df_complete %>%
   group_by(iso3c, Year) %>%
@@ -1758,8 +1651,11 @@ df_complete <- df_complete %>%
 
 summary(df_complete$nbp_public_exclusion_count)
 
-##---- transnational ethnic kin
-# there are different ways to account for TEK - I think a good ways here would be to include a dummy that indicates whether a kin group is in power in another state
+## ---- Transnational Ethnic Kin (TEK)
+
+# Different ways to account for TEK.
+# A suitable approach here: Include a dummy indicating whether a kin group holds power in another state.
+
 df_tek <- df_epr_gu %>%
   select(c(gwgroupid, year, tek_egip))%>%
   rename(Year = year) %>%
@@ -1925,7 +1821,7 @@ lag_vars <- c("nbp_anydown_1",
               "pop")
 
 df_analysis <- df_analysis %>%
-  arrange(Year) %>%
+  arrange(iso3c, Group, Year) %>%
   mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
 
 # conflict intensity
@@ -2237,7 +2133,7 @@ stargazer(
 
 # HORIZONTAL INEQUALITY
 
-m13_logit <- glm(onset_ko_flag ~ HI + 
+m13_logit <- glm(onset_do_flag ~ HI + 
                   SpatialConc +
                   warhist +
                   peaceyears +
@@ -2246,7 +2142,8 @@ m13_logit <- glm(onset_ko_flag ~ HI +
                   nbp_groups_count +
                   groupsize +
                   log(pop) +
-                  log(rgdpe),
+                  log(rgdpe) +
+                  ns(peaceyears, df = 3),
                 data = df_analysis,
                 family = binomial())
 
