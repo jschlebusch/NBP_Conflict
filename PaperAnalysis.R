@@ -6,11 +6,6 @@
 ### 02/2025
 ###-----------------------------------------------------------------------------
 
-# New Packages
-
-install.packages("margins")
-install.packages("ggeffects")
-install.packages("MatchIt")
 
 # Load libraries
 
@@ -43,6 +38,26 @@ library(countrycode)
 df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis.csv") # this is the group level data
 df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c.csv") # this is the conflict level data
 
+# downgrade NAs as 0
+
+df_analysis_group <- df_analysis_group %>%
+  mutate(
+    nbp_anydown_1 = replace_na(nbp_anydown_1, 0),
+    nbp_anydown_2 = replace_na(nbp_anydown_2, 0),
+    epr_downgraded1 = replace_na(epr_downgraded1, 0),
+    epr_downgraded2 = replace_na(epr_downgraded2, 0)
+  )
+
+df_analysis_conflicts <- df_analysis_conflicts %>%
+  mutate(
+    nbp_anydown_1 = replace_na(nbp_anydown_1, 0),
+    nbp_anydown_2 = replace_na(nbp_anydown_2, 0),
+    epr_downgraded1 = replace_na(epr_downgraded1, 0),
+    epr_downgraded2 = replace_na(epr_downgraded2, 0)
+  )
+
+summary(df_analysis_group)
+summary(df_analysis_conflicts)
 
 # ANYDOWN and LAG: Issue Check
 
@@ -71,6 +86,42 @@ df_analysis_group <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
   mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
 
+<<<<<<< HEAD
+=======
+# additional lagges variables (rev. NBP_Conflict)
+
+# lagged variables
+lag_vars <- c("nbp_anydown_2",
+              "nbp_educational_exclusion",
+              "nbp_public_exclusion",
+              "nbp_any_loi",
+              "nbp_any_lc",
+              "HI",
+              "SDM",
+              "Polity2",
+              "rgdpe",
+              "rgdpo",
+              "rgdpna",
+              "groupsize",
+              "SpatialConc",
+              "status_excl",
+              "epr_downgraded1",
+              "epr_downgraded2",
+              "Monolingual",
+              "MonolingualStrict",
+              "pop")
+
+df_analysis_group <- df_analysis_group %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
+
+df_analysis_conflicts <- df_analysis_conflicts %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
+
+summary(df_analysis_group)
+
+>>>>>>> 0f2de603478375fd8091962756c4c2d762245473
 # Incorporate Region Codes for Regional Controls
 
 df_cc <- countrycode::codelist %>%
