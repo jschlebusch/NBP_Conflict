@@ -82,66 +82,12 @@ View(mismatches)
 
 # Co-occurence of nbp_anydown_1 and epr_downgrade1 to see whether we can introduce interaction terms
 
-<<<<<<< HEAD
 df_downgrades <- df_analysis_group %>%
   filter(nbp_anydown_1 == 1 & epr_downgraded1 == 1) 
 
 view(df_downgrades)
 
-=======
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
 
-# Additional lagged variables (revised `NBP_Conflict`).
-  
-# Lagged Variables
-
-lag_vars <- c("nbp_anydown_2",
-              "nbp_educational_exclusion",
-              "nbp_public_exclusion",
-              "nbp_any_loi",
-              "nbp_any_lc",
-              "HI",
-              "SDM",
-              "Polity2",
-              "rgdpe",
-              "rgdpo",
-              "rgdpna",
-              "groupsize",
-              "SpatialConc",
-              "status_excl",
-              "epr_downgraded1",
-              "epr_downgraded2",
-              "Monolingual",
-              "MonolingualStrict",
-              "pop")
-
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
-
-df_analysis_conflicts <- df_analysis_conflicts %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
-
-summary(df_analysis_group)
-
-# Incorporate Region Codes for Regional Controls
-
-df_cc <- countrycode::codelist %>%
-  select(c(country.name.en, iso3c, un.region.name, un.regionintermediate.name, un.regionsub.name))
-
-summary(as.factor(df_cc$un.regionintermediate.name))
-summary(as.factor(df_cc$un.regionsub.name))
-
-df_cc_NA <- df_cc %>%
-  filter(is.na(iso3c))
-
-df_analysis_group <- df_analysis_group %>%
-  left_join(df_cc, by = "iso3c")
-
->>>>>>> 1b6112bb4bbae662f9b21aaf3207979fd67e078d
 ## PAPER MODELS
 
 ## is there a reason we have multiple models with the same name? I suggest to use consecutive numbers (m1, m2, m3 etc.)
@@ -271,15 +217,11 @@ m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 print(m1_summary_clustered)
 
 
-<<<<<<< HEAD
 vif(m1_logit)
 
 influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
 
-
-=======
->>>>>>> 1b6112bb4bbae662f9b21aaf3207979fd67e078d
 ###---- ANALYSIS ---------------------------------------------------------------
 
 # COMPARING POLITICAL AND EDUCATIONAL DOWNGRADES
