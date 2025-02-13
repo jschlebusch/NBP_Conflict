@@ -7,7 +7,7 @@
 ###-----------------------------------------------------------------------------
 
 
-# Load libraries
+# Load libraries 
 
 library(tidyverse)
 library(haven)
@@ -17,7 +17,6 @@ library(ggthemes)
 library(ggmosaic)
 library(reshape2)
 library(psych)
-library(countrycode)
 library(vcd)
 library(naniar)
 library(sandwich)
@@ -30,13 +29,14 @@ library(car)
 library(margins)
 library(ggeffects)
 library(MatchIt)
-library(countrycode)
-
+library(pROC)
 
 # Load data
 
-df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis.csv") # this is the group level data
-df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c.csv") # this is the conflict level data
+df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% # this is the group level data
+  select(-X) # we got the X from the csv file. thats just the case no.
+df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c_250213.csv") %>% # this is the conflict level data
+  select(-X)
 
 # downgrade NAs as 0
 
@@ -76,68 +76,20 @@ mismatches <- df_analysis_group %>%
 
 View(mismatches)
 
-# Generate Accurate Lag
+## The lags work now; regional markers (un.region.name and un.regionsub.name) now taken from NBP_Conflict (with manual inclusion of regions where {countrycode} is NA) and included in .csv file 
+## un.intermediate.region is unfortunately full of missing values, hence not included in NBP_Conflict
+## I therefore deleted the lag code and the region markers code here
 
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(lag_nbp_anydown_1 = lag(nbp_anydown_1))
+# Co-occurence of nbp_anydown_1 and epr_downgrade1 to see whether we can introduce interaction terms
 
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
+df_downgrades <- df_analysis_group %>%
+  filter(nbp_anydown_1 == 1 & epr_downgraded1 == 1) 
 
-<<<<<<< HEAD
-=======
-# additional lagges variables (rev. NBP_Conflict)
-
-# lagged variables
-lag_vars <- c("nbp_anydown_2",
-              "nbp_educational_exclusion",
-              "nbp_public_exclusion",
-              "nbp_any_loi",
-              "nbp_any_lc",
-              "HI",
-              "SDM",
-              "Polity2",
-              "rgdpe",
-              "rgdpo",
-              "rgdpna",
-              "groupsize",
-              "SpatialConc",
-              "status_excl",
-              "epr_downgraded1",
-              "epr_downgraded2",
-              "Monolingual",
-              "MonolingualStrict",
-              "pop")
-
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
-
-df_analysis_conflicts <- df_analysis_conflicts %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
-
-summary(df_analysis_group)
-
->>>>>>> 0f2de603478375fd8091962756c4c2d762245473
-# Incorporate Region Codes for Regional Controls
-
-df_cc <- countrycode::codelist %>%
-  select(c(country.name.en, iso3c, un.region.name, un.regionintermediate.name, un.regionsub.name))
-
-summary(as.factor(df_cc$un.regionintermediate.name))
-summary(as.factor(df_cc$un.regionsub.name))
-
-df_cc_NA <- df_cc %>%
-  filter(is.na(iso3c))
-
-df_analysis_group <- df_analysis_group %>%
-  left_join(df_cc, by = "iso3c")
-
+view(df_downgrades)
 
 ## PAPER MODELS
+
+## is there a reason we have multiple models with the same name? I suggest to use consecutive numbers (m1, m2, m3 etc.)
 
 #ONSET: Educational Exclusion and Downgrades
 
@@ -162,6 +114,17 @@ m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
 m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
+
+
+vif(m1_logit) # might have multicollinearity issues with country population size and GDP, but key IVs should be fine
+influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+cooksD_m1 <- cooks.distance(m1_logit)
+influential_m1 <- which(cooksD > (4/nrow(df_analysis_group))) # we might consider other thresholds
+print(influential_m1) 
+
+# influential cases might also be an issue. We can excluse, specify robust models, or specify penalized logistic regressions - lets discuss
+
 
 # WITH POLITICAL
 
@@ -189,6 +152,12 @@ m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
 
+
+vif(m1_logit)
+
+influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+
 # PUBLIC EXCLUSION
 
 m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
@@ -214,6 +183,12 @@ m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
 m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
+
+
+vif(m1_logit)
+
+influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
 
 # INCIDENCE
 
@@ -241,6 +216,11 @@ m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
 m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
+
+
+vif(m1_logit)
+
+influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
 
 
@@ -271,6 +251,13 @@ m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
 
 print(m1_summary_clustered)
 
+
+vif(m1_logit)
+
+influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+
+
 m2_logit <- glm(onset_ko_flag ~ epr_downgraded1 + 
                   SpatialConc +
                   warhist +
@@ -291,6 +278,12 @@ m2_vcov_cluster <- vcovCL(m2_logit, cluster = df_analysis_group$iso3c)
 m2_summary_clustered <- coeftest(m2_logit, vcov = m2_vcov_cluster)
 
 print(m2_summary_clustered)
+
+
+vif(m2_logit)
+
+influencePlot(m2_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
 
 
 m3_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
@@ -315,8 +308,15 @@ m3_summary_clustered <- coeftest(m3_logit, vcov = m3_vcov_cluster)
 
 print(m3_summary_clustered)
 
-# Interaction Terms: Investigate(!)
 
+vif(m3_logit)
+
+influencePlot(m3_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+
+
+# Interaction Terms: Investigate(!)
+### I think we can delete this, cf. above
 m3i_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 * epr_downgraded1 + 
                   SpatialConc +
                   warhist +
@@ -371,6 +371,13 @@ m4_summary_clustered <- coeftest(m4_logit, vcov = m4_vcov_cluster)
 print(m4_summary_clustered)
 
 
+vif(m4_logit)
+
+influencePlot(m4_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+
+
+
 m5_logit <- glm(incidence_flag ~ epr_downgraded1 + 
                   SpatialConc +
                   warhist +
@@ -391,6 +398,11 @@ m5_vcov_cluster <- vcovCL(m5_logit, cluster = df_analysis_group$iso3c)
 m5_summary_clustered <- coeftest(m5_logit, vcov = m5_vcov_cluster)
 
 print(m5_summary_clustered)
+
+
+vif(m5_logit)
+
+influencePlot(m5_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
 
 m6_logit <- glm(incidence_flag ~ nbp_anydown_1 +
@@ -414,6 +426,12 @@ m6_vcov_cluster <- vcovCL(m6_logit, cluster = df_analysis_group$iso3c)
 m6_summary_clustered <- coeftest(m6_logit, vcov = m6_vcov_cluster)
 
 print(m6_summary_clustered)
+
+
+vif(m6_logit)
+
+influencePlot(m6_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
 
 # territorial onset
 

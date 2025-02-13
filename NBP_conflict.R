@@ -1238,7 +1238,7 @@ df_monolingual <- df_languages_summarised %>%
 
 summary(as.factor(df_monolingual$Monolingual))
 
-openxlsx::write.xlsx(df_monolingual, "nbp_monolingualc_soft_rev_2025.xlsx")
+openxlsx::write.xlsx(df_monolingual, "nbp_monolingualc_soft_rev_250213.xlsx")
 
 # dummy to complete dataset
 
@@ -1286,6 +1286,8 @@ df_monolingual_strict <- df_monolingual_countries %>%
   summarise(MonolingualStrict = ifelse(all(strictML_gr == 1), 1, 0), .groups = "drop")
 
 summary(as.factor(df_monolingual_strict$MonolingualStrict))
+
+openxlsx::write.xlsx(df_monolingual_strict, "nbp_monolingualc_strict_rev_250213.xlsx")
 
 # indicator to main dataset
 
@@ -1793,7 +1795,7 @@ summary(as.factor(df_complete$onset_ko_flag))
 summary(as.factor(df_complete$incidence_flag))
 
 df_analysis <- df_complete %>%
-  select(iso3c, Year, Group, groupname, starts_with("EPRID"), EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict)
+  select(iso3c, Year, Group, groupname, starts_with("EPRID"), EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict, un.region.name, un.regionsub.name)
 
 df_analysis <- df_analysis %>%
   mutate(as.numeric(as.character(Year)))
@@ -1802,6 +1804,7 @@ summary(df_analysis)
 
 # lagged variables
 lag_vars <- c("nbp_anydown_1",
+              "nbp_anydown_2",
               "nbp_educational_exclusion",
               "nbp_public_exclusion",
               "nbp_any_loi",
@@ -1815,7 +1818,8 @@ lag_vars <- c("nbp_anydown_1",
               "groupsize",
               "SpatialConc",
               "status_excl",
-              "epr_downgraded1", 
+              "epr_downgraded1",
+              "epr_downgraded2",
               "Monolingual",
               "MonolingualStrict",
               "pop")
@@ -1834,8 +1838,8 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
-write.csv(df_analysis, "NBP_2025_conflict_paper_analysis.csv")
-write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c.csv")
+write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250213.csv")
+write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250213.csv")
 
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?
