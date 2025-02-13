@@ -76,16 +76,6 @@ mismatches <- df_analysis_group %>%
 
 View(mismatches)
 
-# Generate Accurate Lag
-
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(lag_nbp_anydown_1 = lag(nbp_anydown_1))
-
-df_analysis_group <- df_analysis_group %>%
-  arrange(iso3c, Group, Year) %>%
-  mutate(lag_nbp_anyupgrade_1 = lag(nbp_anyupgrade_1))
-
 # Additional lagged variables (revised `NBP_Conflict`).
   
 # Lagged Variables
