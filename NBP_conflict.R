@@ -50,7 +50,7 @@ df_complete <- df_complete %>%
   mutate(across(starts_with("nbp_"), ~ as.numeric(as.character(.x))
   ))
 
-# Manually check changes for one country to verify first year of country-group isn't counted as a downgrade (optional); I revised the first year rule in the original upgrade/downgrade code
+# Manually check changes for one country to verify first year of country-group isn't counted as a downgrade (optional); I revised the first year rule in the original upgrade/downgrade code so we can skip this
 
 df_cambodia <- df_complete %>%
   filter(Country == "Cambodia") %>%
@@ -284,7 +284,7 @@ ggplot(heatmap_data_5y_down, aes(Var1, Var2, fill = value)) +
 
 ggsave("hm1_down_5y.png", width = 8, height = 6, dpi = 300)
 
-# Bar charts
+# Bar Charts: NBP Downgrades vs. EPR Downgrades
 
 df_complete$combination_5y_down <- with(df_complete, paste(nbp_anydown_5, epr_downgraded5, sep = "-"))
 joint_freq <- as.data.frame(table(df_complete$combination_5y_down))
@@ -298,7 +298,7 @@ ggsave("bpjf_down_5y.png", width = 8, height = 6, dpi = 300)
 
 # UPGRADES 
 
-# Heat map of counts
+# Heat map of counts: NBP Upgrades vs. EPR Upgrades
 
 heatmap_data_5y_up <- melt(contingency_table_5y_up)
 
@@ -310,7 +310,7 @@ ggplot(heatmap_data_5y_up, aes(Var1, Var2, fill = value)) +
 
 ggsave("hm2_up_5y.png", width = 8, height = 6, dpi = 300)
 
-# Bar charts
+# Bar charts: NBP Upgrades vs. EPR Upgrades
 
 df_complete$combination_5y_up <- with(df_complete, paste(nbp_anyupgrade_5, epr_upgraded5, sep = "-"))
 joint_freq <- as.data.frame(table(df_complete$combination_5y_up))
@@ -414,14 +414,18 @@ ggplot(df_hist_long_2, aes(x = Year, y = count, fill = type)) +
 
 ggsave("hist2_down_1y.png", width = 8, height = 6, dpi = 300)
 
-#---- DISAGGREGATION BY REGION -------------------------------------------------
+# ---- DISAGGREGATION BY REGION -------------------------------------------------
 
-# I'll include a couple of plots with the absolute no. of changes at the group level per year
-# Asking about regions, we should, however, perhaps move this to the country level (where did countries change their language policies) -- here re. issue of double counting? 
-# Awaiting response re. email 11 December 2024
-# Note therefore that the graphs displaying the absolute no. of changes are sensitive to changes in very diverse countries, esp. those with many groups that share few languages
+# Including plots showing the absolute number of group-level changes per year.
+# However, for regional analysis, shifting to the country level might be preferable 
+# (tracking where countries changed language policies) to avoid double counting.
 
-# upgrades compared to the previous year by region (as above, now only incl. un.region.name)
+# Awaiting response to 11 December 2024 email.
+# Note: Graphs displaying absolute changes are sensitive to highly diverse countries, 
+# especially those with many groups sharing few languages.
+
+# Upgrades compared to the previous year, disaggregated by region (now using `un.region.name` only).
+
 
 df_hist_nbp_3 <- df_complete %>%
   group_by(Year, un.region.name) %>%
@@ -468,7 +472,7 @@ ggplot(df_hist_3, aes(x = Year)) +
 
 ggsave("l1_up_byregion_1y.png", width = 8, height = 6, dpi = 300)
 
-# downgrades compared to the previous year by region 
+# Downgrades compared to the previous year, disaggregated by region (`un.region.name`).
 
 df_hist_nbp_4 <- df_complete %>%
   group_by(Year, un.region.name) %>%
@@ -519,7 +523,8 @@ ggsave("l2_down_byregion_1y.png", width = 8, height = 6, dpi = 300)
 # Upgrades and downgrades are coded at the group level, making counts sensitive to countries with many groups.
 # Policies affecting multiple groups can inflate counts, likely driven by China and the USSR in Europe and Asia.
 
-# let's have a look at the USSR
+# First examine the USSR
+
 df_ussr <- df_complete %>%
   filter(iso3c == "SUN")
 
@@ -533,7 +538,8 @@ ggplot(df_ussr_hist_npb, aes(x = Year)) +
   geom_line(aes(y = nbp_changes), size = 1) +
   theme_clean()
 
-# and China
+# Examine China
+
 df_china <- df_complete %>%
   filter(iso3c == "CHN")
 
@@ -547,7 +553,7 @@ ggplot(df_china_hist_nbp, aes(x = Year)) +
   geom_line(aes(y = nbp_changes), size = 1) +
   theme_clean()
 
-# let's exclude these two countries as outliers
+# Excluding the USSR and China as outliers
 
 df_hist_nbp_5_without_chinaussr <- df_complete %>%
   filter(!iso3c %in% c("SUN", "CHN")) %>%
@@ -638,7 +644,7 @@ ggplot(df_region_long, aes(x = un.region.name, y = count, fill = upgrade_type)) 
 
 ggsave("b1_upgrLOILC_byregion.png", width = 8, height = 6, dpi = 300)
 
-# downgrades
+# Downgrades
 
 df_region_summary_2 <- df_complete %>%
   group_by(un.region.name) %>%
@@ -675,8 +681,10 @@ ggplot(df_region_long_2, aes(x = un.region.name, y = count, fill = downgrade_typ
 
 ggsave("b2_downgrLOILC_byregion.png", width = 8, height = 6, dpi = 300)
 
-## -- how many languages are used as LOI in a given year - similar to this, we can also identify double counting at the country level
-## -- ON HOLD - focus on group level
+## -- Number of languages used as LOI in a given year.
+## -- Similar approach can help identify double counting at the country level.
+
+## -- ON HOLD: Focus remains on the group level.
 
 df_LOI <- df_complete %>%
   pivot_longer(
@@ -718,11 +726,12 @@ ggplot(df_LOI_average, aes(x = Year, y = AvgUniqueLOILanguages, color = un.regio
     legend.position = "bottom"
   )
 
-#---- COUNTRY LEVEL CHANGES ---------------------------------------------------
+# ---- COUNTRY-LEVEL CHANGES ---------------------------------------------------
 
 ## UPGRADE AT THE COUNTRY LEVEL
-# country-level upgrade of LOI below but need to check again
-## OH HOLD - focus on group level; cf. below for MONOLINGUAL variable
+# Country-level LOI upgrades are listed below but require review.
+
+## ON HOLD: Focus remains on the group level (see MONOLINGUAL variable below).
 
 df_complete_LOIupgrade <- df_complete %>%
   left_join(df_LOI, by = c("Country", "Year"))
@@ -762,14 +771,14 @@ ggplot(upgrades_per_region, aes(x = un.region.name.x, y = TotalUpgrades, fill = 
     legend.position = "none"
   )
 
-##---- CORRELATION TESTS -------------------------------------------------------
+## ---- CORRELATION TESTS -------------------------------------------------------
 
-# GROUP LEVEL VARIABLES
+# GROUP-LEVEL VARIABLES
 
-# Group characteristics - upgrade and downgrade of language status
-# We do not account for the language status at baseline here - should we not also test whether e.g., languages of indigenous groups are generally more / less likely to be used as LOIs?
+# Group characteristics and language status upgrades/downgrades.
+# Baseline language status is not accounted for here—should we test whether, for instance, indigenous group languages are generally more/less likely to be used as LOIs?
 
-group_characteristics <- c("ArrivedPoliticalMigrantsRefugees", "ArrivedLabourMigrants", "RacialGpStudyPeriod", "RacialGpPast", "IndigGp", "SpatialConc")
+group_characteristics <- c("MigrantBackground", "RacialGpStudyPeriod", "RacialGpPast", "IndigGp", "SpatialConc")
 
 #variable summaries
 for (var in group_characteristics) {
@@ -805,10 +814,13 @@ for (var in group_characteristics) {
   }
 }
 
-# Group-level chracteristics and language recognition
-# above: group characteristics and up/downgrade - now: baseline assoc. with recognised language
+# Group-level characteristics and language recognition.
 
-# Whether any language of the group was used in school should give a decent approximation; first incl. then excl. core groups
+# Above: Group characteristics and language status changes.
+# Now: Baseline association with recognized languages.
+
+# Whether any group language was used in schools serves as a reasonable approximation.
+# First, include core groups, then exclude them.
 
 summary(as.factor(df_complete$AnyLangUsedInSchool))
 
@@ -873,7 +885,7 @@ for (var in group_characteristics) {
   }
 }
 
-# more strictly: whether L1-3 are used as LOI among NON-Core Groups
+# Stricter measure: Whether L1–L3 are used as LOI among non-core groups.
 
 df_complete_noCGp <- df_complete_noCGp %>%
   mutate(any_LangOI = ifelse(LOIPrimary1 %in% c(1,2) | LOIPrimary2 %in% c(1,2) | LOIPrimary3 %in% c(1,2), 1, 0))
@@ -906,19 +918,23 @@ for (var in group_characteristics) {
   }
 }
 
-# aggregated, there does not seem to be any association between these characteristics and experiencing an upgrade of the language status and language recognition
+# At an aggregate level, no clear association between these characteristics 
+# and language status upgrades or recognition.
 
 # Self-Determination
 
-# Onset of SDM in one year and nbp_anyupgrade_1 in the following
+# Onset of SDM in one year and `nbp_anyupgrade_1` in the following year.
 
 df_complete_sdmonset <- df_complete %>%
   mutate(group_country = paste0(Group, "_", Country))
 
 df_complete_sdmonset <- df_complete_sdmonset %>%
-  group_by(group_country) %>%  
-  arrange(Year) %>%  
-  mutate(SDM_lag = lag(SDM, n = 1)) %>%
+  group_by(group_country) %>%
+  arrange(iso3c, Group, Year) %>%
+  mutate(
+    SDM_lag = lag(SDM, n = 1),
+    nbp_anydown_1_lag = lag(nbp_anydown_1, n = 1)
+  ) %>%
   ungroup()
 
 df_lagged <- df_complete_sdmonset %>%
@@ -929,6 +945,8 @@ print(ct_sdmonset_upgrade)
 
 chisq_test_up <- chisq.test(ct_sdmonset_upgrade)
 print(chisq_test_up)
+
+## There is an issue in this line of code starting at 951
 
 mosaic(ct_sdmonset_upgrade,
        shade = TRUE,       
@@ -947,15 +965,15 @@ m1 <- glm(nbp_anyupgrade_1 ~ + SDM_lag, data = df_lagged)
 
 summary(m1)
 
-# Onset of SDM in one year and nbp_anydown_1 in the following
+# Onset of SDM in one year and nbp_anydown_1 in the following (Emre: lags don't make sense here, you should be lagging the independent variable; we expect that a downgrade with trigger an SDM movement)
 
-ct_sdmonset_downgrade <- table(df_lagged$nbp_anydown_1, df_lagged$SDM_lag)
+ct_sdmonset_downgrade <- table(df_lagged$nbp_anydown_1_lag, df_lagged$SDM)
 print(ct_sdmonset_downgrade)
 
 chisq_test <- chisq.test(ct_sdmonset_downgrade)
 print(chisq_test)
 
-# End of SDM 
+# End of SDM --- there is an issue here (!)
 
 df_complete_sdmend <- df_complete_sdmonset %>%
   group_by(group_country) %>%  
@@ -969,11 +987,13 @@ df_lagged_2 <- df_complete_sdmend %>%
 ct_sdmend_upgrade <- table(df_lagged_2$nbp_anyupgrade_1, df_lagged_2$SDM_end)
 print(ct_sdmend_upgrade)
 
+# Issue here as well below starting in 992
+
 fisher.test(ct_sdmend_upgrade) 
 
-##---- ASSOCIATION LANGUAGE DOWNGRADE AND VIOLENCE -----------------------------
+## ---- ASSOCIATION: LANGUAGE DOWNGRADE AND VIOLENCE -----------------------------
 
-# downgrade associated with more ethnic / territorial conflict?
+# Is language and political downgrade associated with higher ethnic/territorial conflict?
 
 downgrade_vars <- c("nbp_anydown_1", "nbp_anydown_5", "nbp_anydown_10", "epr_downgraded1", "epr_downgraded5", "epr_downgraded10")
 
@@ -1012,6 +1032,7 @@ for (dep_var in conflict_vars) {
 }
 
 # Fisher's exact tests (one-sided), same as above, but one-sided tests, expecting downgrade to lead to conlict
+
 for (dep_var in conflict_vars) {
   for (ind_var in downgrade_vars) {
     cat("\nTabulation for:", dep_var, "vs", ind_var, "\n")
@@ -1031,6 +1052,7 @@ for (dep_var in conflict_vars) {
 conflict_incidence_vars <- c("incidence_flag", "incidence_terr_flag", "incidence_gov_flag")
 
 # Chi-Square tests - loop through incidence vars instead; does not seem necessary to also run Fisher's exact tests
+
 for (dep_var in conflict_incidence_vars) {
   for (ind_var in downgrade_vars) {
     cat("\nTabulation for:", dep_var, "vs", ind_var, "\n")
@@ -1081,7 +1103,8 @@ for (dep_var in conflict_do_vars) {
 
 # VISUALISATION OF ASSOCIATION
 
-# downgrade and onset
+# Downgrade and Conflict Onset
+
 ggplot(df_complete) +
   geom_mosaic(aes(x = product(nbp_anydown_5), fill = onset_ko_flag)) +
   labs(title = "Association nbp_anydown_5 and Onset") +
@@ -1090,7 +1113,8 @@ ggplot(df_complete) +
 
 ggsave("mosaic1_anydown2onset.png", width = 8, height = 6, dpi = 300)
 
-# downgrade and incidence
+# Downgrade and Conflict Incidence
+
 ggplot(df_complete) +
   geom_mosaic(aes(x = product(nbp_anydown_5), fill = incidence_flag)) +
   labs(title = "Association nbp_anydown_5 and Incidence") +
@@ -1144,35 +1168,7 @@ view(df_language_identification)
 # Previous approach retained but commented out.
 # Note: Now based on LOIPrimary; total number of LOIs per country is not available.
 
-# Below, I just look at two countries to see changes at each step - can be ignored
-
-df_iran <- df_languages %>%
-  filter(Country == "Iran")
-
-df_iran_test <- df_languages_long %>%
-  filter(Country == "Iran")
-
-df_iran_test_2 <- df_languages_summarised %>%
-  filter(Country == "Iran")
-
-df_iran_test_3 <- df_monolingual %>%
-  filter(Country == "Iran")
-
-df_canada <- df_languages %>%
-  filter(Country == "Canada") # change to French as national should be 1983
-
-df_canada_test <- df_languages_long %>%
-  filter(Country == "Canada")
-
-df_canada_test_2 <- df_languages_summarised %>%
-  filter(Country == "Canada")
-
-df_canada_test_3 <- df_monolingual %>%
-  filter(Country == "Canada")
-
-##----
-
-# new version of df_languages_long; changed pairing logic
+# New version of `df_languages_long` with updated pairing logic.
 
 df_languages_long <- df_languages %>%
   pivot_longer(
@@ -1257,9 +1253,14 @@ df_complete <- df_complete %>%
 
 summary(as.factor(df_complete$Monolingual))
 
-# the above-outlined only focuses on  LOI - strict version: 1 national LOI, NO regional LOIs, NO LCs
+# The above focuses only on LOI—strict version: 
+# - 1 national LOI 
+# - No regional LOIs 
+# - No LCs
 
-# logic: Of all monolingual countries, those where the following conditions are fulfilled are strictly monolingual: All LOI variables are either 1 or NA - again disqualifying countries with regional LOIs, and all LC variables must be O or NA, disqualifying countries with LCs
+# Logic: Among monolingual countries, strictly monolingual ones meet these conditions:
+# - All LOI variables are either 1 or NA (excluding countries with regional LOIs).
+# - All LC variables are 0 or NA (excluding countries with LCs).
 
 df_monolingual_countries <- df_complete %>%
   filter(Monolingual == 1) %>%
@@ -1307,6 +1308,7 @@ summary(as.factor(df_complete$MonolingualStrict))
 # MONOLINGUAL EDUCATION - CONFLICT ONSET
 
 # create a variable that reports whether there was any onset on a given country-year
+
 df_complete <- df_complete %>%
   group_by(Year, Country) %>%
   mutate(any_onset = ifelse(any(onset_ko_flag == 1, na.rm = TRUE), 1, 0)) %>%
@@ -1522,7 +1524,7 @@ summary(df_HI_score$HI)
 hist(df_HI_score$HI)
 hist(log(df_HI_score$HI))
 
-# to main dataset
+# Join to main dataset
 
 df_HI_clean <- df_HI_score %>%
   select(iso3c, Year, Group, group_edu_score, country_edu_score, HI) %>%
@@ -1534,7 +1536,7 @@ df_complete <- df_complete %>%
 summary(df_complete$HI)
 
 
-##---- Exclusion Variable
+##---- Educational Exclusion Variable
 
 # Educational Exclusion
 # 1 if all LOI / LC == 0
@@ -1551,7 +1553,7 @@ df_complete <- df_complete %>%
 
 summary(as.factor(df_complete$nbp_educational_exclusion))
 
-# Public Exclusion
+# Public Language Restrictions (Exclusion)
 # 1 if any restriction on language use
 
 df_complete <- df_complete %>%
@@ -1567,7 +1569,6 @@ df_complete <- df_complete %>%
   )
 
 summary(as.factor(df_complete$nbp_public_exclusion))
-
 
 # Any LOI 
 
@@ -1599,7 +1600,6 @@ df_complete <- df_complete %>%
 
 summary(as.factor(df_complete$nbp_any_lc))
 
-
 ### ---- CONTROL VARIABLES ------------------------------------------------------
 
 ## ---- Number of NBP groups
@@ -1613,7 +1613,7 @@ df_complete <- df_complete %>%
 
 summary(df_complete$nbp_groups_count)
 
-##---- no. of nbp excluded groups
+##---- Number of NBP groups educationally excluded (no LOI or LC of group language)
 
 df_edu_ex <- df_complete %>%
   filter(nbp_educational_exclusion == 1) %>%
@@ -1633,7 +1633,7 @@ df_complete <- df_complete %>%
 
 summary(df_complete$nbp_edu_exclusion_count)
 
-# public exclusion
+# Public Exclusion
 
 df_pub_ex <- df_complete %>%
   filter(nbp_public_exclusion == 1) %>%
@@ -1791,6 +1791,7 @@ df_conflicts <- df_conflicts %>%
   mutate(Year = as.numeric(as.character(Year)))
 
 ###---- ANALYSIS ---------------------------------------------------------------
+
 summary(as.factor(df_complete$onset_ko_flag))
 summary(as.factor(df_complete$incidence_flag))
 
@@ -1828,7 +1829,8 @@ df_analysis <- df_analysis %>%
   arrange(iso3c, Group, Year) %>%
   mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
 
-# conflict intensity
+# Conflict Intensity
+
 df_analysis_conflicts <- df_conflicts %>%
   left_join(df_analysis, by = c("iso3c", "Year", "groupname")) %>%
   distinct()
@@ -1838,6 +1840,7 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
+<<<<<<< HEAD
 write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250213.csv")
 write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250213.csv")
 
@@ -3425,3 +3428,7 @@ print(m6_intensity_summary_clustered)
 
 
 
+=======
+write.csv(df_analysis, "NBP_2025_conflict_paper_analysis.csv")
+write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c.csv")
+>>>>>>> 1b6112bb4bbae662f9b21aaf3207979fd67e078d
