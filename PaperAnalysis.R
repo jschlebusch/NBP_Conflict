@@ -38,6 +38,9 @@ df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% 
 df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c_250213.csv") %>% # this is the conflict level data
   select(-X)
 
+summary(as.factor(df_analysis_group$nbp_anydown_1))
+summary(as.factor(df_analysis_group$nbp_anydown_2))
+
 # downgrade NAs as 0
 
 df_analysis_group <- df_analysis_group %>%
