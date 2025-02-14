@@ -76,23 +76,24 @@ mismatches <- df_analysis_group %>%
 
 View(mismatches)
 
-<<<<<<< HEAD
 # Additional lagged variables (revised `NBP_Conflict`).
-  
-# Lagged Variables
-=======
-## The lags work now; regional markers (un.region.name and un.regionsub.name) now taken from NBP_Conflict (with manual inclusion of regions where {countrycode} is NA) and included in .csv file 
-## un.intermediate.region is unfortunately full of missing values, hence not included in NBP_Conflict
-## I therefore deleted the lag code and the region markers code here
 
-# Co-occurence of nbp_anydown_1 and epr_downgrade1 to see whether we can introduce interaction terms
+## Lagged Variables
+
+# Lags now functional; regional markers (`un.region.name` and `un.regionsub.name`) 
+# are taken from `NBP_Conflict`, with manual additions where `{countrycode}` is NA. 
+# These are now included in the .csv file.
+
+# `un.intermediate.region` contains too many missing values and is excluded from `NBP_Conflict`.
+# As a result, the lag and region marker code has been removed here.
+
+# Checking co-occurrence of `nbp_anydown_1` and `epr_downgrade1` to assess 
+# potential interaction terms.
 
 df_downgrades <- df_analysis_group %>%
   filter(nbp_anydown_1 == 1 & epr_downgraded1 == 1) 
 
 view(df_downgrades)
->>>>>>> 7caac11f3491e12e7aa636d163763be4e0a3abf2
-
 
 ## PAPER MODELS
 
