@@ -70,10 +70,10 @@ summary(df_analysis_conflicts)
 check_lag <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
   group_by(iso3c, Group) %>%
-  mutate(expected_lag = lag(nbp_anydown_1)) %>%
+  mutate(expected_lag = dplyr::lag(nbp_anydown_1, order_by = Year)) %>%  # Force ordering
   ungroup() %>%
   summarise(correct = sum(lag_nbp_anydown_1 == expected_lag, na.rm = TRUE),
-            incorrect = sum(lag_nbp_anydown_1 != expected_lag, na.rm = TRUE))
+            incorrect = sum(lag_nbp_anydown_1 != expected_lag & !is.na(lag_nbp_anydown_1) & !is.na(expected_lag)))
 
 print(check_lag)
 
@@ -85,9 +85,12 @@ mismatches <- df_analysis_group %>%
   group_by(iso3c, Group) %>%
   mutate(expected_lag = lag(nbp_anydown_1)) %>%
   ungroup()%>%
-  filter(lag_nbp_anydown_1 != expected_lag & !is.na(lag_nbp_anydown_1) & !is.na(expected_lag))
+  filter(lag_nbp_anydown_1 != expected_lag & !is.na(lag_nbp_anydown_1) & !is.na(expected_lag)) %>% 
+  select(iso3c, Group, Year, nbp_anydown_1, lag_nbp_anydown_1, expected_lag)  # Keep only necessary columns
 
 View(mismatches)
+
+write.csv(mismatches, "mismatches.csv", row.names = FALSE)
 
 # df_mismatches_adc <- mismatches %>%
 #   filter(expected_lag != lag_nbp_anydown_1)
