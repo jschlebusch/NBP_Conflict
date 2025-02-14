@@ -33,9 +33,9 @@ library(pROC)
 
 # Load data
 
-df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% # this is the group level data
+df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis_250214.csv")%>% # this is the group level data
   select(-X) # we got the X from the csv file. thats just the case no.
-df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c_250213.csv") %>% # this is the conflict level data
+df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c_250214.csv") %>% # this is the conflict level data
   select(-X)
 
 summary(as.factor(df_analysis_group$nbp_anydown_1))
@@ -66,18 +66,26 @@ summary(df_analysis_conflicts)
 
 check_lag <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
+  group_by(iso3c, Group) %>%
   mutate(expected_lag = lag(nbp_anydown_1)) %>%
   summarise(correct = sum(lag_nbp_anydown_1 == expected_lag, na.rm = TRUE),
             incorrect = sum(lag_nbp_anydown_1 != expected_lag, na.rm = TRUE))
 
 print(check_lag)
 
+df_check_mismatches <- check_lag %>%
+  filter(incorrect > 0)
+
 mismatches <- df_analysis_group %>%
   arrange(iso3c, Group, Year) %>%
+  group_by(iso3c, Group) %>%
   mutate(expected_lag = lag(nbp_anydown_1)) %>%
   filter(lag_nbp_anydown_1 != expected_lag & !is.na(lag_nbp_anydown_1) & !is.na(expected_lag))
 
 View(mismatches)
+
+df_mismatches_adc <- mismatches %>%
+  filter(expected_lag != lag_nbp_anydown_1)
 
 # Additional lagged variables (revised `NBP_Conflict`).
 

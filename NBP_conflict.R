@@ -1803,6 +1803,12 @@ df_analysis <- df_analysis %>%
 
 summary(df_analysis)
 
+
+## Just reading the data back in here to not run everything again, and then overwrite the lag vars
+
+df_analysis <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% # this is the group level data
+  select(-X) 
+
 # lagged variables
 lag_vars <- c("nbp_anydown_1",
               "nbp_anydown_2",
@@ -1827,6 +1833,7 @@ lag_vars <- c("nbp_anydown_1",
 
 df_analysis <- df_analysis %>%
   arrange(iso3c, Group, Year) %>%
+  group_by(iso3c, Group) %>%
   mutate(across(all_of(lag_vars), ~ lag(.), .names = "lag_{.col}"))
 
 # Conflict Intensity
@@ -1840,9 +1847,8 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
-<<<<<<< HEAD
-write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250213.csv")
-write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250213.csv")
+write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250214.csv")
+write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250214.csv")
 
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?
