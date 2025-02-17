@@ -33,8 +33,8 @@ library(pROC)
 
 # Load data
 
-df_analysis_group <- read.csv("NBP_2025_conflict_paper_analysis_250214.csv")%>% # this is the group level data
-  select(-X) # we got the X from the csv file. thats just the case no.
+df_analysis_group <- read_csv("NBP_2025_conflict_paper_analysis_250214.csv") # this is the group level data
+   
 df_analysis_conflicts <- read.csv("NBP_2025_conflict_paper_analysis_c_250214.csv") %>% # this is the conflict level data
   select(-X)
 
