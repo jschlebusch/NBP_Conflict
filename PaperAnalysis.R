@@ -195,10 +195,33 @@ vif(m1_logit) # might have multicollinearity issues with country population size
 influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
 cooksD_m1 <- cooks.distance(m1_logit)
-influential_m1 <- which(cooksD > (4/nrow(df_analysis_group))) # we might consider other thresholds
+influential_m1 <- which(cooksD_m1 > (4/nrow(df_analysis_group))) # we might consider other thresholds
 print(influential_m1) 
 
 # influential cases might also be an issue. We can excluse, specify robust models, or specify penalized logistic regressions - lets discuss
+
+df_analysis_group_adjusted <- df_analysis_group[-influential_m1, ]
+
+m1_logit_adjusted <- glm(onset_do_flag ~ lag_nbp_anydown_1 + 
+                           nbp_educational_exclusion +
+                           groupsize +
+                           SpatialConc +
+                           warhist +
+                           tek_egip +
+                           lag_Polity2 +
+                           excl_groups_count +
+                           log(lag_pop) +
+                           log(lag_rgdpe) +
+                           ns(peaceyears, df = 3),
+                         data = df_analysis_group_adjusted,
+                         family = binomial())
+
+summary(m1_logit_adjusted)
+
+m1_vcov_cluster_adjusted <- vcovCL(m1_logit_adjusted, cluster = df_analysis_group_adjusted$iso3c)
+
+m1_summary_clustered_adjusted <- coeftest(m1_logit_adjusted, vcov = m1_vcov_cluster_adjusted)
+print(m1_summary_clustered_adjusted)
 
 
 # WITH POLITICAL
@@ -293,6 +316,33 @@ vif(m1_logit)
 
 influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
+cooksD_m1 <- cooks.distance(m1_logit)
+influential_m1 <- which(cooksD_m1 > (4/nrow(df_analysis_group))) # we might consider other thresholds
+print(influential_m1) 
+
+
+df_analysis_group_adjusted <- df_analysis_group[-influential_m1, ]
+
+m1_logit_adjusted <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
+                           nbp_educational_exclusion +
+                           groupsize +
+                           SpatialConc +
+                           warhist +
+                           tek_egip +
+                           lag_Polity2 +
+                           excl_groups_count +
+                           log(lag_pop) +
+                           log(lag_rgdpe) +
+                           ns(peaceyears, df = 3),
+                         data = df_analysis_group_adjusted,
+                         family = binomial())
+
+summary(m1_logit_adjusted)
+
+m1_vcov_cluster_adjusted <- vcovCL(m1_logit_adjusted, cluster = df_analysis_group_adjusted$iso3c)
+
+m1_summary_clustered_adjusted <- coeftest(m1_logit_adjusted, vcov = m1_vcov_cluster_adjusted)
+print(m1_summary_clustered_adjusted)
 
 ###---- ANALYSIS ---------------------------------------------------------------
 
