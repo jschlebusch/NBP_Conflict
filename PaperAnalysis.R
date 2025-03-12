@@ -120,8 +120,7 @@ view(df_downgrades)
 
 #ONSET: Educational Exclusion and Downgrades
 
-m1_logit <- glm(onset_do_flag ~ lag_nbp_anydown_1 + 
-                  nbp_educational_exclusion +
+m1_logit <- glm(onset_do_flag ~ lag_nbp_anydown_2 + 
                   groupsize +
                   SpatialConc +
                   warhist +
