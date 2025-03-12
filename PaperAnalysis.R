@@ -161,14 +161,12 @@ df_analysis_group <- df_analysis_group %>%
   mutate(across(ends_with("_flag"), ~ replace_na(.x, 0)))
 
 
-
 ## PAPER MODELS
 
-## is there a reason we have multiple models with the same name? I suggest to use consecutive numbers (m1, m2, m3 etc.)
+# MODEL 1: CIVIL WAR ONSET: Educational  Exclusion and Downgrades
 
-#ONSET: Educational Exclusion and Downgrades
-
-m1_logit <- glm(onset_do_flag ~ lag_nbp_anydown_2 + 
+m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
+                  nbp_consecutive_educational_exclusion_years +
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -222,13 +220,12 @@ m1_vcov_cluster_adjusted <- vcovCL(m1_logit_adjusted, cluster = df_analysis_grou
 m1_summary_clustered_adjusted <- coeftest(m1_logit_adjusted, vcov = m1_vcov_cluster_adjusted)
 print(m1_summary_clustered_adjusted)
 
+#MODEL 2: CIVIL WAR ONSET: Educational + Political  Exclusion and Downgrades
 
-# WITH POLITICAL
-
-m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 + 
-                  nbp_educational_exclusion +
-                  epr_downgraded1 +
-                  status_excl +
+m2_logit <- glm(onset_do_flag ~ nbp_anydown_1 + 
+                  nbp_consecutive_educational_exclusion_years +
+                  lag_epr_downgraded1 +
+                  lag_status_excl +
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -241,23 +238,24 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_anydown_1 +
                 data = df_analysis_group,
                 family = binomial())
 
-summary(m1_logit)
+summary(m2_logit)
 
-m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+m2_vcov_cluster <- vcovCL(m2_logit, cluster = df_analysis_group$iso3c)
 
-m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+m2_summary_clustered <- coeftest(m2_logit, vcov = m2_vcov_cluster)
 
-print(m1_summary_clustered)
-
-
-vif(m1_logit)
-
-influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+print(m2_summary_clustered)
 
 
-# PUBLIC EXCLUSION
+vif(m2_logit)
 
-m1_logit <- glm(onset_ko_flag ~ lag_nbp_public_exclusion +
+influencePlot(m2_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+
+
+#MODEL 3: INCIDENCE: Educational Exclusion and Downgrade
+
+m3_logit <- glm(incidence_flag ~ lag_nbp_anydown_1 + 
+                  lag_nbp_any_loi +
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -270,26 +268,21 @@ m1_logit <- glm(onset_ko_flag ~ lag_nbp_public_exclusion +
                 data = df_analysis_group,
                 family = binomial())
 
-summary(m1_logit)
+summary(m3_logit)
 
-m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+m3_vcov_cluster <- vcovCL(m3_logit, cluster = df_analysis_group$iso3c)
 
-m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+m3_summary_clustered <- coeftest(m3_logit, vcov = m3_vcov_cluster)
 
-print(m1_summary_clustered)
+print(m3_summary_clustered)
 
-
-vif(m1_logit)
-
-influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
+#MODEL 4: INCIDENCE: Political + Educational Exclusion and Downgrade
 
 
-# INCIDENCE
-
-m1_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
-                  nbp_educational_exclusion +
-                  epr_downgraded1 +
-                  status_excl +
+m4_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
+                  lag_nbp_educational_exclusion +
+                  lag_epr_downgraded1 +
+                  lag_status_excl +
                   groupsize +
                   SpatialConc +
                   warhist +
@@ -302,22 +295,25 @@ m1_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 +
                 data = df_analysis_group,
                 family = binomial())
 
-summary(m1_logit)
+summary(m4_logit)
 
-m1_vcov_cluster <- vcovCL(m1_logit, cluster = df_analysis_group$iso3c)
+m4_vcov_cluster <- vcovCL(m4_logit, cluster = df_analysis_group$iso3c)
 
-m1_summary_clustered <- coeftest(m1_logit, vcov = m1_vcov_cluster)
+m4_summary_clustered <- coeftest(m4_logit, vcov = m4_vcov_cluster)
 
-print(m1_summary_clustered)
+print(m4_summary_clustered)
 
 
-vif(m1_logit)
+
+
+
+vif(m4_logit)
 
 influencePlot(m1_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
-cooksD_m1 <- cooks.distance(m1_logit)
-influential_m1 <- which(cooksD_m1 > (4/nrow(df_analysis_group))) # we might consider other thresholds
-print(influential_m1) 
+cooksD_m1 <- cooks.distance(m4_logit)
+influential_m3 <- which(cooksD_m1 > (4/nrow(df_analysis_group))) # we might consider other thresholds
+print(influential_m3) 
 
 
 df_analysis_group_adjusted <- df_analysis_group[-influential_m1, ]
@@ -524,7 +520,7 @@ vif(m5_logit)
 influencePlot(m5_logit, id.method="identify", main="Influence Plot", sub="Circle size ~ Cook's Distance") 
 
 
-m6_logit <- glm(incidence_flag ~ nbp_anydown_1 +
+m6_logit <- glm(incidence_flag ~ lag_nbp_anydown_1 +
                   epr_downgraded1 + 
                   SpatialConc +
                   warhist +
@@ -554,7 +550,7 @@ influencePlot(m6_logit, id.method="identify", main="Influence Plot", sub="Circle
 
 # territorial onset
 
-m7_logit <- glm(onset_ko_terr_flag ~ nbp_anydown_1 + 
+m7_logit <- glm(onset_ko_terr_flag ~ lag_nbp_anydown_1 + 
                   SpatialConc +
                   warhist +
                   peaceyears +
@@ -623,18 +619,16 @@ print(m9_summary_clustered)
 
 # territorial incidence
 
-m10_logit <- glm(incidence_terr_flag ~ nbp_anydown_1 + 
+m10_logit <- glm(incidence_terr_flag ~ lag_nbp_anydown_1 + 
                    SpatialConc +
                    warhist +
-                   peaceyears +
                    tek_egip +
                    Polity2 +
                    excl_groups_count +
                    groupsize +
                    log(lag_pop) +
                    log(lag_rgdpe) +
-                   ns(peaceyears, df = 3) +
-                   factor(un.region.name),
+                   ns(peaceyears, df = 3),
                  data = df_analysis_group,
                  family = binomial())
 
@@ -1968,13 +1962,12 @@ print(m2_intensity_summary_clustered)
 
 
 m3_intensity <- glm(intensity_level ~ lag_nbp_anydown_1 + 
-                      lag_groupsize +
-                      lag_SpatialConc +
+                      groupsize +
+                      SpatialConc +
                       warhist +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -1992,13 +1985,12 @@ print(m3_intensity_summary_clustered)
 
 
 m4_intensity <- glm(intensity_level ~ lag_HI + 
-                      lag_groupsize +
-                      lag_SpatialConc +
+                      groupsize +
+                      SpatialConc +
                       warhist +
                       peaceyears +
                       tek_egip +
                       lag_Polity2 +
-                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe)+
                       ns(peaceyears, df = 3),
@@ -2015,15 +2007,12 @@ print(m4_intensity_summary_clustered)
 
 
 
-
 m5_intensity <- glm(intensity_level ~ Monolingual + 
                       groupsize +
                       SpatialConc +
                       warhist +
-                      peaceyears +
                       tek_egip +
                       Polity2 +
-                      excl_groups_count +
                       log(lag_pop) +
                       log(lag_rgdpe) +
                       ns(peaceyears, df = 3),
