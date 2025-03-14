@@ -1790,13 +1790,17 @@ class(df_conflicts$Year)
 df_conflicts <- df_conflicts %>%
   mutate(Year = as.numeric(as.character(Year)))
 
+
+write.csv(df_complete, "NBP_2025_conflict_paper_COMPLETE_250313.csv")
+
+
 ###---- ANALYSIS ---------------------------------------------------------------
 
 summary(as.factor(df_complete$onset_ko_flag))
 summary(as.factor(df_complete$incidence_flag))
 
 df_analysis <- df_complete %>%
-  select(iso3c, Year, Group, groupname, starts_with("EPRID"), EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict, un.region.name, un.regionsub.name)
+  select(iso3c, Year, Group, groupname, starts_with("EPRID"), EPRMergeLevel, SizeApprox, groupsize, starts_with("warhist"), peaceyears, SpatialConc, starts_with("epr_"), starts_with("nbp_"), starts_with("downLOI_"), status_excl, excl_groups_count, tek_egip, tek_count, Polity2, HI, starts_with("onset_"), any_onset, starts_with("incidence_"), SDM, pop, rgdpe, rgdpo, rgdpna, ArrivedPoliticalMigrantsRefugees, ArrivedLabourMigrants, MigrantBackground, CoreGp, Monolingual, MonolingualStrict, un.region.name, un.regionsub.name)
 
 df_analysis <- df_analysis %>%
   mutate(as.numeric(as.character(Year)))
@@ -1806,8 +1810,8 @@ summary(df_analysis)
 
 ## Just reading the data back in here to not run everything again, and then overwrite the lag vars
 
-df_analysis <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% # this is the group level data
-  select(-X) 
+#df_analysis <- read.csv("NBP_2025_conflict_paper_analysis_250213.csv")%>% # this is the group level data
+#  select(-X) 
 
 # lagged variables
 lag_vars <- c("nbp_anydown_1",
@@ -1847,8 +1851,8 @@ df_analysis_conflicts <- df_analysis_conflicts %>%
 
 summary(df_analysis_conflicts)
 
-write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250214.csv")
-write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250214.csv")
+write.csv(df_analysis, "NBP_2025_conflict_paper_analysis_250313.csv")
+write.csv(df_analysis_conflicts, "NBP_2025_conflict_paper_analysis_c_250313.csv")
 
 # ISSUES TO BE CONSIDERED
 # 1) how do we want to treat NAs? Exlude? Impute?
